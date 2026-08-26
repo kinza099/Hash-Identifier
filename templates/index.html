@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Hash Identifier Tool{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>🔍 Hash Identifier</h1>
+    <p class="subtitle">Paste any hash below and instantly find out what algorithm likely generated it — supports 20 hash types including MD5, SHA-1/2/3, bcrypt, scrypt, Argon2, and more.</p>
+</section>
+
+<section class="tool-card">
+    <label for="hash-input" class="input-label">Enter Hash</label>
+    <div class="input-row">
+        <input type="text" id="hash-input" placeholder="e.g. 5f4dcc3b5aa765d61d8327deb882cf99" autocomplete="off" spellcheck="false">
+        <button id="identify-btn" class="btn-primary">Identify</button>
+        <button id="clear-btn" class="btn-secondary" title="Clear">✕</button>
+    </div>
+
+    <div class="strength-bar-wrap" id="strength-bar-wrap" style="display:none;">
+        <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+    </div>
+
+    <div class="meta-row" id="meta-row" style="display:none;">
+        <span id="meta-length"></span>
+        <span id="meta-hex"></span>
+        <span id="meta-charset"></span>
+    </div>
+</section>
+
+<section class="results" id="results" style="display:none;">
+    <div class="results-header">
+        <h2>Possible Matches</h2>
+        <span id="confidence-badge" class="confidence-badge"></span>
+    </div>
+    <div id="results-list" class="results-list"></div>
+</section>
+
+<section class="history-card" id="history-card" style="display:none;">
+    <div class="history-header">
+        <h3>🕘 Recent Lookups</h3>
+        <button id="history-clear" class="btn-link">Clear history</button>
+    </div>
+    <div id="history-list" class="history-list"></div>
+</section>
+
+<section class="info-card">
+    <h3>ℹ️ How it works</h3>
+    <p>This tool analyzes the <strong>length</strong>, <strong>character set</strong>, and known <strong>prefix patterns</strong> (like <code>$2b$</code> for bcrypt or <code>$argon2id$</code> for Argon2) of your input to narrow down which hashing algorithm(s) could have produced it. Many hash types share the same output length (e.g. MD5 and NTLM are both 32 hex characters), so multiple possible matches may be shown — this is normal and expected since hash identification by pattern alone cannot always be 100% certain.</p>
+    <div class="supported-types">
+        <span class="type-pill">MD5</span><span class="type-pill">MD4</span><span class="type-pill">NTLM</span>
+        <span class="type-pill">SHA-1</span><span class="type-pill">RIPEMD-160</span>
+        <span class="type-pill">SHA-224</span><span class="type-pill">SHA-256</span><span class="type-pill">SHA-384</span><span class="type-pill">SHA-512</span>
+        <span class="type-pill">SHA3-224</span><span class="type-pill">SHA3-256</span><span class="type-pill">SHA3-384</span><span class="type-pill">SHA3-512</span>
+        <span class="type-pill">bcrypt</span><span class="type-pill">scrypt</span><span class="type-pill">Argon2</span>
+        <span class="type-pill">MySQL 4.1+</span><span class="type-pill">LDAP SHA</span><span class="type-pill">LDAP SSHA</span><span class="type-pill">Cisco Type 5</span>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/hash_tool.js') }}"></script>
+{% endblock %}

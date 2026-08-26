@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Author{% endblock %}
+
+{% block content %}
+<section class="author-page">
+    <div class="author-card">
+        <div class="avatar">K</div>
+        <h1>{{ author.name }}</h1>
+        <p class="role">Creator of the Hash Identifier Tool</p>
+
+        <div class="author-details">
+            <div class="detail-row">
+                <span class="detail-label">👤 Author</span>
+                <span class="detail-value">{{ author.name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">💻 GitHub</span>
+                <span class="detail-value"><a href="{{ author.github }}" target="_blank" rel="noopener">{{ author.github }}</a></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">📧 Email</span>
+                <span class="detail-value"><a href="mailto:{{ author.email }}">{{ author.email }}</a></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">🛠️ Project</span>
+                <span class="detail-value">{{ author.project }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">⚙️ Built With</span>
+                <span class="detail-value">Python, Flask, HTML, CSS, JavaScript</span>
+            </div>
+        </div>
+
+        <p class="about-text">
+            This tool was built to help developers, students, and security enthusiasts
+            quickly identify what type of hash algorithm was used to generate a given
+            hash string — supporting common algorithms like MD5, SHA-1, SHA-2, SHA-3,
+            bcrypt, and more.
+        </p>
+    </div>
+</section>
+{% endblock %}
