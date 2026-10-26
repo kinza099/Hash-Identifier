@@ -1,41 +1,110 @@
 {% extends "base.html" %}
-{% block title %}Author{% endblock %}
+{% block title %}Authors{% endblock %}
 
 {% block content %}
 <section class="author-page">
-    <div class="author-card">
-        <div class="avatar">K</div>
-        <h1>{{ author.name }}</h1>
-        <p class="role">Creator of the Hash Identifier Tool</p>
+    <div class="hero" style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="display: flex; align-items: center; justify-content: center; gap: 0.6rem;">
+            <span class="material-symbols-outlined" style="font-size: 2.2rem; color: var(--accent);">engineering</span>
+            Project Authors &amp; Security Engineers
+        </h1>
+        <p class="subtitle">
+            Core creators and cybersecurity engineers behind the Hash Identifier &amp; Advanced Analysis Toolkit.
+        </p>
+    </div>
 
-        <div class="author-details">
-            <div class="detail-row">
-                <span class="detail-label">👤 Author</span>
-                <span class="detail-value">{{ author.name }}</span>
+    <div class="authors-grid">
+        <!-- AUTHOR 1: KINZA -->
+        <div class="author-card" id="author-card-kinza">
+            <div class="avatar-wrapper">
+                <img class="avatar-img" src="https://github.com/kinza099.png" alt="Kinza Avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <span class="avatar-fallback" style="display: none;">K</span>
             </div>
-            <div class="detail-row">
-                <span class="detail-label">💻 GitHub</span>
-                <span class="detail-value"><a href="{{ author.github }}" target="_blank" rel="noopener">{{ author.github }}</a></span>
+            <h1>Kinza</h1>
+            <p class="role">Creator &amp; Lead Security Developer | Security Researcher &amp; Software Engineer</p>
+
+            <div class="author-details">
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">person</span> Author</span>
+                    <span class="detail-value">Kinza</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">verified_user</span> Role</span>
+                    <span class="detail-value">Creator &amp; Lead Security Developer</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">terminal</span> GitHub</span>
+                    <span class="detail-value"><a href="https://github.com/kinza099" target="_blank" rel="noopener">github.com/kinza099</a></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">mail</span> Email</span>
+                    <span class="detail-value"><a href="mailto:kinzapython@gmail.com">kinzapython@gmail.com</a></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">school</span> Institution</span>
+                    <span class="detail-value">MUET (B.S. Cyber Security)</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">code</span> Core Focus</span>
+                    <span class="detail-value">Python, Security Tools, Cryptography, Web Defense</span>
+                </div>
             </div>
-            <div class="detail-row">
-                <span class="detail-label">📧 Email</span>
-                <span class="detail-value"><a href="mailto:{{ author.email }}">{{ author.email }}</a></span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">🛠️ Project</span>
-                <span class="detail-value">{{ author.project }}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">⚙️ Built With</span>
-                <span class="detail-value">Python, Flask, HTML, CSS, JavaScript</span>
-            </div>
+
+            <p class="about-text">
+                Final-year B.S. Cyber Security student at MUET. Specialized in Python, security tools engineering, cryptography, and interactive web defense systems.
+            </p>
         </div>
 
+        <!-- AUTHOR 2: SALMAN MALLAH -->
+        <div class="author-card" id="author-card-salman-mallah">
+            <div class="avatar-wrapper">
+                <img class="avatar-img" src="https://github.com/salmanmallah.png" alt="Salman Mallah Avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <span class="avatar-fallback" style="display: none;">S</span>
+            </div>
+            <h1>Salman Mallah</h1>
+            <p class="role">Co-Creator &amp; Cyber Security Engineer &amp; Malware Analyst</p>
+
+            <div class="author-details">
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">person</span> Author</span>
+                    <span class="detail-value">Salman Mallah</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">verified_user</span> Role</span>
+                    <span class="detail-value">Co-Creator &amp; Cyber Security Engineer</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">terminal</span> GitHub</span>
+                    <span class="detail-value"><a href="https://github.com/salmanmallah" target="_blank" rel="noopener">github.com/salmanmallah</a></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">mail</span> Profile</span>
+                    <span class="detail-value"><a href="https://github.com/salmanmallah" target="_blank" rel="noopener">@salmanmallah</a></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">school</span> Institution</span>
+                    <span class="detail-value">MUET (B.S. Cyber Security)</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label"><span class="material-symbols-outlined">code</span> Core Focus</span>
+                    <span class="detail-value">Static Malware Analysis, Reverse Engineering, PE Internals</span>
+                </div>
+            </div>
+
+            <p class="about-text">
+                Final-year B.S. Cyber Security student at MUET. Focuses on Static Malware Analysis, Reverse Engineering, PE Internals, Threat Detection, and Systems Security.
+            </p>
+        </div>
+    </div>
+
+    <!-- PROJECT MISSION SECTION (styled with distinct class so exactly 2 author-cards exist) -->
+    <div class="project-overview-panel" style="max-width: 960px; width: 100%; margin-top: 2rem; text-align: left; background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 2.2rem; box-shadow: var(--shadow);">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; font-size: 1.25rem;">
+            <span class="material-symbols-outlined" style="color: var(--accent);">verified</span>
+            About Hash Identifier &amp; Analysis Toolkit
+        </h3>
         <p class="about-text">
-            This tool was built to help developers, students, and security enthusiasts
-            quickly identify what type of hash algorithm was used to generate a given
-            hash string — supporting common algorithms like MD5, SHA-1, SHA-2, SHA-3,
-            bcrypt, and more.
+            Engineered as an advanced cryptographic analysis and forensics suite, this toolkit equips cybersecurity analysts, penetration testers, and students to quickly identify hash algorithms, compute digests, verify file integrity, detect duplicates, and cross-reference records. Supporting over 30 hashing algorithms — including MD5, SHA-1, SHA-2, SHA-3, bcrypt, scrypt, Argon2, NTLM, and JWT — with 100% private in-browser computation and local database capabilities.
         </p>
     </div>
 </section>

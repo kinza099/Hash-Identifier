@@ -1,61 +1,723 @@
 {% extends "base.html" %}
-{% block title %}Hash Identifier Tool{% endblock %}
+{% block title %}Hash Identifier & Advanced Analysis Toolkit{% endblock %}
+
+{% block nav_tabs %}
+<div class="toolkit-nav-wrap">
+    <div class="toolkit-nav-tabs">
+        <button class="toolkit-tab-btn active" data-tab="tab-identifier" title="Single Hash Identification & Structural Analysis"><span class="material-symbols-outlined">search</span> Identifier</button>
+        <button class="toolkit-tab-btn" data-tab="tab-batch" title="Scan multiline list or TXT/CSV files"><span class="material-symbols-outlined">fact_check</span> Batch Scanner</button>
+        <button class="toolkit-tab-btn" data-tab="tab-generator" title="Generate MD5, SHA-1, SHA-256, SHA-384, SHA-512"><span class="material-symbols-outlined">bolt</span> Generator</button>
+        <button class="toolkit-tab-btn" data-tab="tab-file-hasher" title="Calculate file hashes & verify integrity"><span class="material-symbols-outlined">folder_open</span> File Hasher</button>
+        <button class="toolkit-tab-btn" data-tab="tab-duplicates" title="Find repeated hash strings in lists"><span class="material-symbols-outlined">content_copy</span> Duplicates</button>
+        <button class="toolkit-tab-btn" data-tab="tab-diff" title="Compare two hash lists (List A vs List B)"><span class="material-symbols-outlined">compare_arrows</span> Diff Analyzer</button>
+        <button class="toolkit-tab-btn" data-tab="tab-manifest" title="Create and verify SHA-256 manifests"><span class="material-symbols-outlined">receipt_long</span> Manifest</button>
+        <button class="toolkit-tab-btn" data-tab="tab-database" title="Local reference database for exact lookups"><span class="material-symbols-outlined">database</span> Database</button>
+        <button class="toolkit-tab-btn" data-tab="tab-benchmark" title="Benchmark algorithm execution speed"><span class="material-symbols-outlined">speed</span> Benchmark</button>
+    </div>
+</div>
+{% endblock %}
 
 {% block content %}
-<section class="hero">
-    <h1>🔍 Hash Identifier</h1>
-    <p class="subtitle">Paste any hash below and instantly find out what algorithm likely generated it — supports 20 hash types including MD5, SHA-1/2/3, bcrypt, scrypt, Argon2, and more.</p>
-</section>
+<!-- ======================================================================= -->
+<!-- TOOL 1: SINGLE HASH IDENTIFIER (ORIGINAL ENHANCED)                      -->
+<!-- ======================================================================= -->
+<div id="tab-identifier" class="tool-panel active">
+    <section class="hero">
+        <h1><span class="material-symbols-outlined">search</span> Hash Identifier & Structural Analysis</h1>
+        <p class="subtitle">Enter or paste any hash to analyze its length, character set, structure, and identify candidate algorithms with evidence-based match scoring and ambiguity analysis.</p>
+    </section>
 
-<section class="tool-card">
-    <label for="hash-input" class="input-label">Enter Hash</label>
-    <div class="input-row">
-        <input type="text" id="hash-input" placeholder="e.g. 5f4dcc3b5aa765d61d8327deb882cf99" autocomplete="off" spellcheck="false">
-        <button id="identify-btn" class="btn-primary">Identify</button>
-        <button id="clear-btn" class="btn-secondary" title="Clear">✕</button>
+    <section class="tool-card">
+        <label for="hash-input" class="input-label">Enter Hash</label>
+        <div class="input-row">
+            <input type="text" id="hash-input" placeholder="e.g. 5f4dcc3b5aa765d61d8327deb882cf99 or $2b$12$..." autocomplete="off" spellcheck="false">
+            <button id="identify-btn" class="btn-primary">Identify</button>
+            <button id="clear-btn" class="btn-secondary" title="Clear"><span class="material-symbols-outlined">close</span></button>
+        </div>
+
+        <div class="strength-bar-wrap" id="strength-bar-wrap" style="display:none;">
+            <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+        </div>
+
+        <div class="meta-row" id="meta-row" style="display:none;">
+            <span id="meta-length"></span>
+            <span id="meta-hex"></span>
+            <span id="meta-charset"></span>
+        </div>
+    </section>
+
+    <section class="results" id="results" style="display:none;">
+        <div class="results-header">
+            <h2>Possible Matches</h2>
+            <span id="confidence-badge" class="confidence-badge"></span>
+        </div>
+        <div id="results-list" class="results-list"></div>
+    </section>
+
+    <section class="history-card" id="history-card" style="display:none;">
+        <div class="history-header">
+            <h3><span class="material-symbols-outlined">history</span> Recent Lookups</h3>
+            <button id="history-clear" class="btn-link">Clear history</button>
+        </div>
+        <div id="history-list" class="history-list"></div>
+    </section>
+
+    <section class="info-card">
+        <h3><span class="material-symbols-outlined">info</span> How it works & Accuracy Considerations</h3>
+        <p>This tool performs evidence-based structural analysis across <strong>length</strong>, <strong>character set</strong> (Hex, Base64, MCF), and <strong>prefix/format signatures</strong> (e.g. <code>$2b$</code> for bcrypt, <code>$argon2id$</code> for Argon2, <code>*</code> for MySQL 4.1+).</p>
+        <p style="margin-top:0.6rem;"><strong>Accuracy Notice:</strong> A hash string alone often cannot uniquely identify its algorithm when multiple algorithms share the same length (e.g., MD5 and NTLM are both 32 hex chars). Format matches indicate structural compatibility rather than definitive cryptographic proof. Ambiguity notices are shown whenever multiple algorithms are viable.</p>
+        <div class="supported-types">
+            <span class="type-pill">MD5</span><span class="type-pill">MD4</span><span class="type-pill">NTLM</span>
+            <span class="type-pill">SHA-1</span><span class="type-pill">RIPEMD-160</span>
+            <span class="type-pill">SHA-224</span><span class="type-pill">SHA-256</span><span class="type-pill">SHA-384</span><span class="type-pill">SHA-512</span>
+            <span class="type-pill">SHA3-224</span><span class="type-pill">SHA3-256</span><span class="type-pill">SHA3-384</span><span class="type-pill">SHA3-512</span>
+            <span class="type-pill">bcrypt</span><span class="type-pill">scrypt</span><span class="type-pill">Argon2 (id/i/d)</span>
+            <span class="type-pill">SHA-256 crypt</span><span class="type-pill">SHA-512 crypt</span>
+            <span class="type-pill">MySQL 4.1+</span><span class="type-pill">LDAP SHA</span><span class="type-pill">LDAP SSHA</span><span class="type-pill">Cisco Type 5</span>
+            <span class="type-pill">JWT</span><span class="type-pill">CRC-32</span><span class="type-pill">Adler-32</span>
+        </div>
+    </section>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TOOL 2: BATCH HASH SCANNER                                              -->
+<!-- ======================================================================= -->
+<div id="tab-batch" class="tool-panel">
+    <section class="hero">
+        <h1><span class="material-symbols-outlined">fact_check</span> Batch Hash Scanner</h1>
+        <p class="subtitle">Paste multiline hash lists or upload TXT/CSV files containing hundreds of entries. Processes each hash independently, preserves line numbers, marks duplicates, and allows instant sorting and filtering.</p>
+    </section>
+
+    <section class="panel-card">
+        <label class="input-label" for="batch-input">Hash List Input (One per line or CSV)</label>
+        <textarea id="batch-input" class="textarea-field" placeholder="Paste hash strings here, one per line:&#10;5f4dcc3b5aa765d61d8327deb882cf99&#10;2fd4e1c67a2d28fced849ee1bb76e7391b93eb12&#10;d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592&#10;$2b$12$e8O6nB528y4O9h/z87vBiu9e87K62bY/pY31hX1K2K62bY/pY31hX"></textarea>
+
+        <div id="batch-dropzone" class="dropzone" style="margin-top: 1rem;">
+            <div class="dropzone-icon"><span class="material-symbols-outlined">description</span></div>
+            <div class="dropzone-text">Drag & drop TXT or CSV file here, or click to browse</div>
+            <div class="dropzone-sub">Supports large files with hundreds+ entries</div>
+            <input type="file" id="batch-file-input" accept=".txt,.csv" style="display:none;">
+        </div>
+
+        <div class="toolbar-row">
+            <div style="display:flex; gap:0.6rem;">
+                <button id="batch-scan-btn" class="btn-primary">Scan Hashes</button>
+                <button id="batch-clear-btn" class="btn-secondary">Clear</button>
+            </div>
+            <div style="display:flex; gap:0.6rem;">
+                <button id="batch-export-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export CSV</button>
+                <button id="batch-export-json" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export JSON</button>
+            </div>
+        </div>
+    </section>
+
+    <div id="batch-summary" class="summary-chips-row" style="display:none;">
+        <div class="summary-chip"><span class="summary-chip-label">Total Entries:</span> <span id="batch-total-count" class="summary-chip-val">0</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">Valid Matches:</span> <span id="batch-valid-count" class="summary-chip-val" style="color:var(--success);">0</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">Invalid/Unmatched:</span> <span id="batch-invalid-count" class="summary-chip-val" style="color:var(--danger);">0</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">Unique Hashes:</span> <span id="batch-unique-count" class="summary-chip-val">0</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">Repeated Duplicates:</span> <span id="batch-duplicate-count" class="summary-chip-val" style="color:var(--warning);">0</span></div>
     </div>
 
-    <div class="strength-bar-wrap" id="strength-bar-wrap" style="display:none;">
-        <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+    <section id="batch-results-container" class="panel-card" style="display:none;">
+        <div class="toolbar-row">
+            <h3 class="section-title">Batch Scan Results</h3>
+            <div class="filter-group">
+                <input type="text" id="batch-search-input" class="select-input" placeholder="Search hash string...">
+                <select id="batch-filter-validity" class="select-input">
+                    <option value="all">All Statuses</option>
+                    <option value="valid">Valid Only</option>
+                    <option value="invalid">Invalid Only</option>
+                </select>
+                <select id="batch-filter-confidence" class="select-input">
+                    <option value="all">All Confidence</option>
+                    <option value="high">High Confidence</option>
+                    <option value="medium">Medium Confidence</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:60px;">Line #</th>
+                        <th>Hash Input</th>
+                        <th>Possible Algorithm(s)</th>
+                        <th>Confidence</th>
+                        <th>Status</th>
+                        <th style="width:110px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="batch-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TOOL 3: MULTI-ALGORITHM HASH GENERATOR                                 -->
+<!-- ======================================================================= -->
+<div id="tab-generator" class="tool-panel">
+    <section class="hero">
+        <h1><span class="material-symbols-outlined">bolt</span> Multi-Algorithm Hash Generator</h1>
+        <p class="subtitle">Generate cryptographic hashes across MD5, SHA-1, SHA-256, SHA-384, and SHA-512 simultaneously. Full Unicode support with canonical empty-input handling and single or batch copying.</p>
+    </section>
+
+    <section class="panel-card">
+        <label class="input-label" for="gen-text-input">Plaintext Input</label>
+        <textarea id="gen-text-input" class="textarea-field" placeholder="Type or paste text to hash (supports Unicode, passwords, tokens, paragraphs)..."></textarea>
+
+        <div class="meta-row" style="margin-top:0.6rem; margin-bottom:1rem;">
+            <span id="gen-char-count">0 characters</span>
+            <span id="gen-byte-count">0 bytes (UTF-8)</span>
+            <span>Encoding: UTF-8 standard</span>
+        </div>
+
+        <div class="toolbar-row">
+            <div style="display:flex; gap:0.6rem;">
+                <button id="gen-submit-btn" class="btn-primary">Generate Hashes</button>
+                <button id="gen-clear-btn" class="btn-secondary">Clear</button>
+            </div>
+            <button id="gen-copy-all-btn" class="btn-outline" style="display:none;"><span class="material-symbols-outlined">content_copy</span> Copy All Hashes</button>
+        </div>
+    </section>
+
+    <div class="alert-box alert-info">
+        <div class="alert-title"><span class="material-symbols-outlined">info</span> Input Encoding & Security Notice</div>
+        <div class="alert-body">
+            Input strings are encoded using canonical UTF-8 bytes. Empty text explicitly produces the official standard 0-byte digest for each algorithm (e.g. MD5 <code>d41d8cd98f00b204e9800998ecf8427e</code>).
+            MD5 and SHA-1 outputs are provided for legacy/educational purposes and are not recommended for security-critical integrity verification.
+        </div>
     </div>
 
-    <div class="meta-row" id="meta-row" style="display:none;">
-        <span id="meta-length"></span>
-        <span id="meta-hex"></span>
-        <span id="meta-charset"></span>
-    </div>
-</section>
+    <div id="gen-results-grid" class="gen-grid" style="display:none;"></div>
+</div>
 
-<section class="results" id="results" style="display:none;">
-    <div class="results-header">
-        <h2>Possible Matches</h2>
-        <span id="confidence-badge" class="confidence-badge"></span>
-    </div>
-    <div id="results-list" class="results-list"></div>
-</section>
+<!-- ======================================================================= -->
+<!-- TOOL 4: FILE HASH CALCULATOR & INTEGRITY VERIFIER                      -->
+<!-- ======================================================================= -->
+<div id="tab-file-hasher" class="tool-panel">
+    <section class="hero">
+        <h1><span class="material-symbols-outlined">folder_open</span> File Hash Calculator</h1>
+        <p class="subtitle">Upload a file and generate its cryptographic hash.</p>
+    </section>
 
-<section class="history-card" id="history-card" style="display:none;">
-    <div class="history-header">
-        <h3>🕘 Recent Lookups</h3>
-        <button id="history-clear" class="btn-link">Clear history</button>
-    </div>
-    <div id="history-list" class="history-list"></div>
-</section>
+    <section class="panel-card">
+        <!-- Live Preview Empty State as specifically requested -->
+        <div id="file-empty-preview" class="preview-empty-state">
+            <div class="preview-empty-icon"><span class="material-symbols-outlined">folder</span></div>
+            <div class="preview-empty-text">A live interface preview — no file has been uploaded or hashed.</div>
+        </div>
 
-<section class="info-card">
-    <h3>ℹ️ How it works</h3>
-    <p>This tool analyzes the <strong>length</strong>, <strong>character set</strong>, and known <strong>prefix patterns</strong> (like <code>$2b$</code> for bcrypt or <code>$argon2id$</code> for Argon2) of your input to narrow down which hashing algorithm(s) could have produced it. Many hash types share the same output length (e.g. MD5 and NTLM are both 32 hex characters), so multiple possible matches may be shown — this is normal and expected since hash identification by pattern alone cannot always be 100% certain.</p>
-    <div class="supported-types">
-        <span class="type-pill">MD5</span><span class="type-pill">MD4</span><span class="type-pill">NTLM</span>
-        <span class="type-pill">SHA-1</span><span class="type-pill">RIPEMD-160</span>
-        <span class="type-pill">SHA-224</span><span class="type-pill">SHA-256</span><span class="type-pill">SHA-384</span><span class="type-pill">SHA-512</span>
-        <span class="type-pill">SHA3-224</span><span class="type-pill">SHA3-256</span><span class="type-pill">SHA3-384</span><span class="type-pill">SHA3-512</span>
-        <span class="type-pill">bcrypt</span><span class="type-pill">scrypt</span><span class="type-pill">Argon2</span>
-        <span class="type-pill">MySQL 4.1+</span><span class="type-pill">LDAP SHA</span><span class="type-pill">LDAP SSHA</span><span class="type-pill">Cisco Type 5</span>
+        <!-- File Upload Section -->
+        <h3 class="input-label" style="font-size:1rem; margin-bottom:0.4rem;">Upload your file</h3>
+        <p style="font-size:0.86rem; color:var(--text-muted); margin-bottom:0.9rem;">
+            Supported examples: EXE, PDF, ZIP, TXT, images, and other file types.<br>
+            Example filename: <code>sample.exe</code>
+        </p>
+
+        <div id="file-dropzone" class="dropzone">
+            <div class="dropzone-icon"><span class="material-symbols-outlined">upload_file</span></div>
+            <div class="dropzone-text">Click to choose a file or drag & drop it here</div>
+            <div class="dropzone-sub">Files are hashed locally in your browser using chunked streaming. Files are never executed or uploaded externally.</div>
+            <input type="file" id="file-upload-input" style="display:none;">
+        </div>
+
+        <!-- Selected File Display -->
+        <div id="selected-file-card" class="selected-file-display" style="display:none;">
+            <div class="file-info-col">
+                <span class="file-info-name" id="selected-file-name">sample.exe</span>
+                <span class="file-info-size" id="selected-file-size">1.24 MB (1,300,480 bytes)</span>
+            </div>
+            <button id="selected-file-remove" class="btn-outline btn-sm">Change File</button>
+        </div>
+
+        <!-- Algorithm Selection -->
+        <h3 class="input-label" style="font-size:1rem; margin-top:1.2rem; margin-bottom:0.6rem;">Select Hash Algorithm</h3>
+        <div class="alg-button-group">
+            <button class="alg-select-btn" data-alg="md5">MD5</button>
+            <button class="alg-select-btn" data-alg="sha1">SHA-1</button>
+            <button class="alg-select-btn active" data-alg="sha256">SHA-256</button>
+            <button class="alg-select-btn" data-alg="sha384">SHA-384</button>
+            <button class="alg-select-btn" data-alg="sha512">SHA-512</button>
+            <button class="alg-select-btn" data-alg="all">All Algorithms</button>
+        </div>
+
+        <div id="current-selected-alg-label" class="selected-alg-feedback">Selected algorithm: SHA-256</div>
+
+        <div style="margin-top:1.2rem;">
+            <button id="file-generate-btn" class="btn-primary" disabled>Generate Hash</button>
+        </div>
+
+        <!-- Streaming Progress Bar -->
+        <div id="file-progress-wrap" class="progress-wrap">
+            <div class="progress-track"><div id="file-progress-fill" class="progress-fill"></div></div>
+            <div id="file-progress-text" class="progress-text">Hashing file in chunks...</div>
+        </div>
+    </section>
+
+    <!-- Calculation Results -->
+    <section id="file-results-card" class="panel-card" style="display:none;">
+        <div class="toolbar-row">
+            <h3 class="section-title">Calculated File Digest</h3>
+            <div style="display:flex; gap:0.6rem;">
+                <button id="file-export-txt" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export TXT Report</button>
+                <button id="file-export-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export CSV Report</button>
+            </div>
+        </div>
+
+        <div id="file-results-container"></div>
+
+        <!-- Integrity Verification Sub-card -->
+        <div class="integrity-card">
+            <div class="integrity-title"><span class="material-symbols-outlined">verified_user</span> Cryptographic Integrity Verifier</div>
+            <div class="integrity-subtitle">Paste an expected reference hash (e.g. from software release notes) to verify file authenticity. Format and length are validated beforehand to prevent false mismatches.</div>
+            <div class="input-row">
+                <input type="text" id="file-ref-hash-input" class="text-input-field" placeholder="Paste expected reference hash here..." autocomplete="off">
+                <button id="file-verify-btn" class="btn-primary">Verify Integrity</button>
+            </div>
+            <div id="file-verify-result" style="display:none; margin-top:1rem;"></div>
+        </div>
+    </section>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TOOL 5: DUPLICATE HASH DETECTION                                        -->
+<!-- ======================================================================= -->
+<div id="tab-duplicates" class="tool-panel">
+    <section class="hero">
+        <h1><span class="material-symbols-outlined">content_copy</span> Duplicate Hash Detection</h1>
+        <p class="subtitle">Identify repeated hash values across large lists. Groups identical entries together, displays original line numbers, and exports unique hashes or duplicate-only audit reports.</p>
+    </section>
+
+    <section class="panel-card">
+        <label class="input-label" for="dup-input">Hash List Input</label>
+        <textarea id="dup-input" class="textarea-field" placeholder="Paste hash strings to find duplicates (one per line)..."></textarea>
+
+        <div id="dup-dropzone" class="dropzone" style="margin-top:1rem;">
+            <div class="dropzone-icon"><span class="material-symbols-outlined">description</span></div>
+            <div class="dropzone-text">Drop TXT or CSV file here</div>
+            <input type="file" id="dup-file-input" accept=".txt,.csv" style="display:none;">
+        </div>
+
+        <div class="toolbar-row">
+            <div style="display:flex; gap:0.8rem; align-items:center;">
+                <button id="dup-scan-btn" class="btn-primary">Find Duplicates</button>
+                <button id="dup-clear-btn" class="btn-secondary">Clear</button>
+                <label style="font-size:0.85rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                    <input type="checkbox" id="dup-case-toggle"> Case-sensitive match
+                </label>
+            </div>
+            <div style="display:flex; gap:0.6rem;">
+                <button id="dup-export-unique" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export Unique</button>
+                <button id="dup-export-dups" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export Duplicates</button>
+            </div>
+        </div>
+    </section>
+
+    <div id="dup-summary" class="summary-chips-row" style="display:none;">
+        <div class="summary-chip"><span class="summary-chip-label">Total Lines:</span> <span id="dup-total-lines" class="summary-chip-val">0</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">Unique Values:</span> <span id="dup-unique-count" class="summary-chip-val">0</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">Duplicate Groups:</span> <span id="dup-groups-count" class="summary-chip-val" style="color:var(--warning);">0</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">Repeated Occurrences:</span> <span id="dup-repeated-total" class="summary-chip-val" style="color:var(--danger);">0</span></div>
     </div>
-</section>
+
+    <section id="dup-results-container" class="panel-card" style="display:none;">
+        <div class="toolbar-row">
+            <h3 class="section-title">Duplicate Hash Analysis</h3>
+            <div class="filter-group">
+                <input type="text" id="dup-search-input" class="select-input" placeholder="Search hash...">
+                <select id="dup-filter-view" class="select-input">
+                    <option value="all">View All Entries</option>
+                    <option value="duplicates_only" selected>Duplicates Only</option>
+                    <option value="unique_only">Unique Only</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="dup-results-list"></div>
+    </section>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TOOL 6: HASH LIST DIFF ANALYZER                                         -->
+<!-- ======================================================================= -->
+<div id="tab-diff" class="tool-panel">
+    <section class="hero">
+        <h1><span class="material-symbols-outlined">compare_arrows</span> Hash List Diff Analyzer</h1>
+        <p class="subtitle">Compare two hash lists (List A baseline vs List B target). Identifies common hashes, added entries in List B, removed entries from List A, and duplicate occurrences within each list.</p>
+    </section>
+
+    <section class="panel-card">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.2rem;">
+            <div>
+                <label class="input-label" for="diff-list-a">Hash List A (Baseline)</label>
+                <textarea id="diff-list-a" class="textarea-field" style="min-height:160px;" placeholder="Paste baseline list A hashes here..."></textarea>
+                <div style="margin-top:0.4rem;">
+                    <label class="btn-outline btn-sm" style="cursor:pointer; display:inline-block;">
+                        <span class="material-symbols-outlined">folder_open</span> Load File A <input type="file" id="diff-file-a" accept=".txt,.csv" style="display:none;">
+                    </label>
+                </div>
+            </div>
+            <div>
+                <label class="input-label" for="diff-list-b">Hash List B (Target / Comparison)</label>
+                <textarea id="diff-list-b" class="textarea-field" style="min-height:160px;" placeholder="Paste comparison list B hashes here..."></textarea>
+                <div style="margin-top:0.4rem;">
+                    <label class="btn-outline btn-sm" style="cursor:pointer; display:inline-block;">
+                        <span class="material-symbols-outlined">folder_open</span> Load File B <input type="file" id="diff-file-b" accept=".txt,.csv" style="display:none;">
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="toolbar-row" style="margin-top:1.2rem;">
+            <div style="display:flex; gap:0.8rem; align-items:center;">
+                <button id="diff-compare-btn" class="btn-primary">Compare Lists</button>
+                <button id="diff-clear-btn" class="btn-secondary">Clear</button>
+                <label style="font-size:0.85rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem; cursor:pointer;">
+                    <input type="checkbox" id="diff-case-toggle"> Case-sensitive
+                </label>
+            </div>
+            <div style="display:flex; gap:0.6rem;">
+                <button id="diff-export-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export Diff CSV</button>
+                <button id="diff-export-json" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export Diff JSON</button>
+            </div>
+        </div>
+    </section>
+
+    <div id="diff-summary" class="summary-chips-row" style="display:none;">
+        <div class="summary-chip"><span class="summary-chip-label">Common Hashes:</span> <span id="diff-common-count" class="summary-chip-val" style="color:var(--accent);">0</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">Added in List B:</span> <span id="diff-added-count" class="summary-chip-val" style="color:var(--success);">0</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">Removed from List A:</span> <span id="diff-removed-count" class="summary-chip-val" style="color:var(--danger);">0</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">List A Stats:</span> <span id="diff-dups-a" class="summary-chip-val" style="font-size:0.95rem;">0 dups</span></div>
+        <div class="summary-chip"><span class="summary-chip-label">List B Stats:</span> <span id="diff-dups-b" class="summary-chip-val" style="font-size:0.95rem;">0 dups</span></div>
+    </div>
+
+    <section id="diff-results-container" class="panel-card" style="display:none;">
+        <div class="toolbar-row">
+            <div style="display:flex; gap:0.4rem;">
+                <button id="diff-tab-common" class="btn-outline btn-sm active">Common (0)</button>
+                <button id="diff-tab-added" class="btn-outline btn-sm">Added in B (0)</button>
+                <button id="diff-tab-removed" class="btn-outline btn-sm">Removed from A (0)</button>
+            </div>
+            <input type="text" id="diff-search-input" class="select-input" placeholder="Search diff list...">
+        </div>
+
+        <div id="diff-results-list" style="margin-top:1rem;"></div>
+    </section>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TOOL 7: HASH MANIFEST GENERATOR & VERIFIER                             -->
+<!-- ======================================================================= -->
+<div id="tab-manifest" class="tool-panel">
+    <section class="hero">
+        <h1><span class="material-symbols-outlined">receipt_long</span> Hash Manifest Generator & Verifier</h1>
+        <p class="subtitle">Generate cryptographic SHA-256 manifests for entire directories or file sets. Verify current files against reference manifests with exact categorization of unchanged, modified, missing, and added files.</p>
+    </section>
+
+    <div class="toolbar-row" style="justify-content:center; margin-bottom:1.5rem;">
+        <div style="background:var(--card-bg-elevated); padding:0.3rem; border-radius:12px; border:1px solid var(--border); display:flex; gap:0.4rem;">
+            <button id="manifest-mode-gen" class="btn-primary btn-sm">Create Manifest</button>
+            <button id="manifest-mode-ver" class="btn-outline btn-sm">Verify Existing Manifest</button>
+        </div>
+    </div>
+
+    <!-- Generator Mode -->
+    <div id="manifest-gen-section">
+        <section class="panel-card">
+            <h3 class="section-title" style="margin-bottom:0.6rem;">Generate SHA-256 Manifest</h3>
+            <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1rem;">Select files or a directory folder. Relative paths, file sizes, and SHA-256 digests will be calculated locally.</p>
+
+            <div id="manifest-gen-dropzone" class="dropzone">
+                <div class="dropzone-icon"><span class="material-symbols-outlined">folder_open</span></div>
+                <div class="dropzone-text">Drop files or folder here</div>
+                <div style="margin-top:0.8rem; display:flex; justify-content:center; gap:0.8rem;">
+                    <label class="btn-outline btn-sm" style="cursor:pointer;">
+                        Select Files <input type="file" id="manifest-gen-files" multiple style="display:none;">
+                    </label>
+                    <label class="btn-outline btn-sm" style="cursor:pointer;">
+                        Select Folder <input type="file" id="manifest-gen-folder" webkitdirectory directory style="display:none;">
+                    </label>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem;">
+                <span id="manifest-gen-count" style="font-size:0.9rem; color:var(--text-muted);">0 file(s) selected</span>
+                <button id="manifest-gen-start-btn" class="btn-primary" disabled>Generate Manifest</button>
+            </div>
+
+            <div id="manifest-gen-progress-wrap" class="progress-wrap">
+                <div class="progress-track"><div id="manifest-gen-progress-fill" class="progress-fill"></div></div>
+                <div id="manifest-gen-progress-text" class="progress-text">Processing files...</div>
+            </div>
+        </section>
+
+        <section id="manifest-gen-results" class="panel-card" style="display:none;">
+            <div class="toolbar-row">
+                <h3 class="section-title">Generated Manifest Records</h3>
+                <div style="display:flex; gap:0.6rem;">
+                    <button id="manifest-download-json" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Download JSON</button>
+                    <button id="manifest-download-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Download CSV</button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">#</th>
+                            <th>Relative Path</th>
+                            <th>Size</th>
+                            <th>Algorithm</th>
+                            <th>SHA-256 Digest</th>
+                        </tr>
+                    </thead>
+                    <tbody id="manifest-gen-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Verifier Mode -->
+    <div id="manifest-ver-section" style="display:none;">
+        <section class="panel-card">
+            <h3 class="section-title" style="margin-bottom:0.6rem;">Verify Against Saved Manifest</h3>
+            <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1rem;">Load a previously generated manifest file (JSON or CSV) and select the corresponding target files or directory.</p>
+
+            <div style="margin-bottom:1.2rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                    <label class="input-label" for="manifest-ver-text">Reference Manifest Content</label>
+                    <label class="btn-outline btn-sm" style="cursor:pointer;">
+                        Load Manifest File <input type="file" id="manifest-ver-file-input" accept=".json,.csv" style="display:none;">
+                    </label>
+                </div>
+                <textarea id="manifest-ver-text" class="textarea-field" style="min-height:100px;" placeholder="Paste JSON or CSV manifest content here..."></textarea>
+            </div>
+
+            <div id="manifest-ver-dropzone" class="dropzone">
+                <div class="dropzone-icon"><span class="material-symbols-outlined">verified</span></div>
+                <div class="dropzone-text">Select current target files or directory to verify</div>
+                <div style="margin-top:0.8rem; display:flex; justify-content:center; gap:0.8rem;">
+                    <label class="btn-outline btn-sm" style="cursor:pointer;">
+                        Choose Target Files <input type="file" id="manifest-ver-targets" multiple style="display:none;">
+                    </label>
+                    <label class="btn-outline btn-sm" style="cursor:pointer;">
+                        Choose Target Folder <input type="file" id="manifest-ver-target-folder" webkitdirectory directory style="display:none;">
+                    </label>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem;">
+                <span id="manifest-ver-count" style="font-size:0.9rem; color:var(--text-muted);">0 file(s) loaded</span>
+                <button id="manifest-ver-start-btn" class="btn-primary">Verify Integrity</button>
+            </div>
+
+            <div id="manifest-ver-progress-wrap" class="progress-wrap">
+                <div class="progress-track"><div id="manifest-ver-progress-fill" class="progress-fill"></div></div>
+                <div id="manifest-ver-progress-text" class="progress-text">Verifying digests...</div>
+            </div>
+        </section>
+
+        <section id="manifest-ver-results" class="panel-card" style="display:none;">
+            <div id="manifest-ver-status-box" class="alert-box"></div>
+            <div class="toolbar-row">
+                <h3 class="section-title">Verification Breakdown</h3>
+                <div style="display:flex; gap:0.6rem;">
+                    <button id="manifest-ver-export-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export Report CSV</button>
+                    <button id="manifest-ver-export-json" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export Report JSON</button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">#</th>
+                            <th>File Path</th>
+                            <th>Status</th>
+                            <th>Verification Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="manifest-ver-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TOOL 8: LOCAL REFERENCE DATABASE                                        -->
+<!-- ======================================================================= -->
+<div id="tab-database" class="tool-panel">
+    <section class="hero">
+        <h1><span class="material-symbols-outlined">database</span> Local Hash Reference Database</h1>
+        <p class="subtitle">Search, store, and manage known hash records locally using an integrated SQLite database. Track source provenance, tags, and notes with import and export support.</p>
+    </section>
+
+    <section class="panel-card">
+        <label class="input-label" for="db-search-input">Search Exact Reference Hash</label>
+        <div class="input-row">
+            <input type="text" id="db-search-input" class="text-input-field" placeholder="Search exact hash in reference database...">
+            <button id="db-search-btn" class="btn-primary">Search</button>
+        </div>
+        <div id="db-search-result" style="display:none; margin-top:1rem;"></div>
+    </section>
+
+    <section class="panel-card">
+        <div class="toolbar-row">
+            <h3 class="section-title">Local Reference Catalog</h3>
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                <button id="db-add-toggle-btn" class="btn-primary btn-sm">+ Add New Record</button>
+                <label class="btn-outline btn-sm" style="cursor:pointer;">
+                    <span class="material-symbols-outlined">upload_file</span> Import <input type="file" id="db-import-file" accept=".json,.csv" style="display:none;">
+                </label>
+                <button id="db-export-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export CSV</button>
+                <button id="db-export-json" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export JSON</button>
+            </div>
+        </div>
+
+        <!-- Add Record Form (collapsible) -->
+        <div id="db-add-container" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:1.2rem; margin:1rem 0;">
+            <h4 style="margin-bottom:0.8rem;">Add Reference Hash Record</h4>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0.8rem; margin-bottom:0.8rem;">
+                <div>
+                    <label class="input-label">Hash Value *</label>
+                    <input type="text" id="db-add-hash" class="text-input-field" placeholder="Hash digest...">
+                </div>
+                <div>
+                    <label class="input-label">Algorithm</label>
+                    <input type="text" id="db-add-alg" class="text-input-field" placeholder="e.g. SHA-256, MD5">
+                </div>
+                <div>
+                    <label class="input-label">Source / Provenance</label>
+                    <input type="text" id="db-add-source" class="text-input-field" placeholder="e.g. NIST NSRL, Internal Audit">
+                </div>
+                <div>
+                    <label class="input-label">Tag / Classification</label>
+                    <input type="text" id="db-add-tag" class="text-input-field" placeholder="e.g. Known Benign, Test Vector">
+                </div>
+            </div>
+            <div style="margin-bottom:0.8rem;">
+                <label class="input-label">Notes / Description</label>
+                <input type="text" id="db-add-notes" class="text-input-field" placeholder="File description, version, release context...">
+            </div>
+            <div style="display:flex; gap:0.6rem;">
+                <button id="db-add-submit" class="btn-primary btn-sm">Save to Database</button>
+                <button id="db-add-cancel" class="btn-secondary btn-sm">Cancel</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Hash</th>
+                        <th>Algorithm</th>
+                        <th>Tag</th>
+                        <th>Source / Provenance</th>
+                        <th>Notes</th>
+                        <th style="width:60px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="db-records-body"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TOOL 9: HASH PERFORMANCE BENCHMARK                                      -->
+<!-- ======================================================================= -->
+<div id="tab-benchmark" class="tool-panel">
+    <section class="hero">
+        <h1><span class="material-symbols-outlined">speed</span> Hash Performance Benchmark</h1>
+        <p class="subtitle">Measure real cryptographic execution speeds and throughput across MD5, SHA-1, SHA-256, SHA-384, and SHA-512. Utilizes warm-up iterations and high-resolution timing APIs.</p>
+    </section>
+
+    <section class="panel-card">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:1.2rem;">
+            <div>
+                <label class="input-label" for="bench-size-select">Test Payload Size</label>
+                <select id="bench-size-select" class="select-input" style="width:100%;">
+                    <option value="65536">Small (64 KB)</option>
+                    <option value="1048576" selected>Medium (1 MB)</option>
+                    <option value="8388608">Large (8 MB)</option>
+                    <option value="16777216">Extra Large (16 MB)</option>
+                </select>
+            </div>
+            <div>
+                <label class="input-label" for="bench-iter-select">Iterations (Averaged)</label>
+                <select id="bench-iter-select" class="select-input" style="width:100%;">
+                    <option value="3">3 iterations (Fast)</option>
+                    <option value="5" selected>5 iterations (Standard)</option>
+                    <option value="10">10 iterations (High Accuracy)</option>
+                </select>
+            </div>
+            <div>
+                <label class="input-label" for="bench-target-select">Execution Target</label>
+                <select id="bench-target-select" class="select-input" style="width:100%;">
+                    <option value="browser" selected>Browser Client (Client JS)</option>
+                    <option value="backend">Server Backend (Python/C)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="toolbar-row">
+            <div style="display:flex; align-items:center; gap:1rem;">
+                <button id="bench-start-btn" class="btn-primary">Start Benchmark</button>
+                <span id="bench-progress-text" style="font-size:0.86rem; color:var(--text-muted);"></span>
+            </div>
+            <div style="display:flex; gap:0.6rem;">
+                <button id="bench-export-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export CSV</button>
+                <button id="bench-export-json" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export JSON</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="bench-results-card" class="panel-card" style="display:none;">
+        <div class="toolbar-row">
+            <h3 class="section-title">Benchmark Results</h3>
+            <div id="bench-env-info" style="font-size:0.82rem; color:var(--text-muted);"></div>
+        </div>
+
+        <h4 style="font-size:0.9rem; margin-top:1rem; margin-bottom:0.4rem; color:var(--text-muted); text-transform:uppercase;">Throughput Comparison (MB/s)</h4>
+        <div id="bench-chart-container" class="bench-chart"></div>
+
+        <div class="table-responsive" style="margin-top:1.5rem;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:50px;">Rank</th>
+                        <th>Algorithm</th>
+                        <th>Avg Time (ms)</th>
+                        <th>Min Time</th>
+                        <th>Max Time</th>
+                        <th>Throughput (MB/s)</th>
+                    </tr>
+                </thead>
+                <tbody id="bench-table-body"></tbody>
+            </table>
+        </div>
+
+        <div class="alert-box alert-info" style="margin-top:1.2rem; margin-bottom:0;">
+            <div class="alert-title"><span class="material-symbols-outlined">insights</span> Benchmark Analysis Note</div>
+            <div class="alert-body">
+                Throughput is measured dynamically via high-resolution timing APIs. Results depend on host CPU SIMD/AVX capabilities, memory bandwidth, runtime optimizations, and payload size.
+                While MD5 and SHA-1 may exhibit high throughput due to simpler round functions, they lack cryptographic collision resistance and are unsuitable for security applications.
+            </div>
+        </div>
+    </section>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/hash_tool.js') }}"></script>
+<script src="{{ url_for('static', filename='js/batch_tool.js') }}"></script>
+<script src="{{ url_for('static', filename='js/generator_tool.js') }}"></script>
+<script src="{{ url_for('static', filename='js/file_hasher_tool.js') }}"></script>
+<script src="{{ url_for('static', filename='js/duplicates_tool.js') }}"></script>
+<script src="{{ url_for('static', filename='js/diff_tool.js') }}"></script>
+<script src="{{ url_for('static', filename='js/manifest_tool.js') }}"></script>
+<script src="{{ url_for('static', filename='js/database_tool.js') }}"></script>
+<script src="{{ url_for('static', filename='js/benchmark_tool.js') }}"></script>
 {% endblock %}
