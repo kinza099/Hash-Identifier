@@ -11,7 +11,6 @@
         <button class="toolkit-tab-btn" data-tab="tab-duplicates" title="Find repeated hash strings in lists"><span class="material-symbols-outlined">content_copy</span> Duplicates</button>
         <button class="toolkit-tab-btn" data-tab="tab-diff" title="Compare two hash lists (List A vs List B)"><span class="material-symbols-outlined">compare_arrows</span> Diff Analyzer</button>
         <button class="toolkit-tab-btn" data-tab="tab-manifest" title="Create and verify SHA-256 manifests"><span class="material-symbols-outlined">receipt_long</span> Manifest</button>
-        <button class="toolkit-tab-btn" data-tab="tab-database" title="Local reference database for exact lookups"><span class="material-symbols-outlined">database</span> Database</button>
         <button class="toolkit-tab-btn" data-tab="tab-benchmark" title="Benchmark algorithm execution speed"><span class="material-symbols-outlined">speed</span> Benchmark</button>
     </div>
 </div>
@@ -23,7 +22,7 @@
 <!-- ======================================================================= -->
 <div id="tab-identifier" class="tool-panel active">
     <section class="hero">
-        <h1><span class="material-symbols-outlined">search</span> Hash Identifier & Structural Analysis</h1>
+        <h1><span class="material-symbols-outlined">search</span> Hash Identifier &amp; Structural Analysis</h1>
         <p class="subtitle">Enter or paste any hash to analyze its length, character set, structure, and identify candidate algorithms with evidence-based match scoring and ambiguity analysis.</p>
     </section>
 
@@ -63,7 +62,7 @@
     </section>
 
     <section class="info-card">
-        <h3><span class="material-symbols-outlined">info</span> How it works & Accuracy Considerations</h3>
+        <h3><span class="material-symbols-outlined">info</span> How it works &amp; Accuracy Considerations</h3>
         <p>This tool performs evidence-based structural analysis across <strong>length</strong>, <strong>character set</strong> (Hex, Base64, MCF), and <strong>prefix/format signatures</strong> (e.g. <code>$2b$</code> for bcrypt, <code>$argon2id$</code> for Argon2, <code>*</code> for MySQL 4.1+).</p>
         <p style="margin-top:0.6rem;"><strong>Accuracy Notice:</strong> A hash string alone often cannot uniquely identify its algorithm when multiple algorithms share the same length (e.g., MD5 and NTLM are both 32 hex chars). Format matches indicate structural compatibility rather than definitive cryptographic proof. Ambiguity notices are shown whenever multiple algorithms are viable.</p>
         <div class="supported-types">
@@ -199,8 +198,8 @@
 <!-- ======================================================================= -->
 <div id="tab-file-hasher" class="tool-panel">
     <section class="hero">
-        <h1><span class="material-symbols-outlined">folder_open</span> File Hash Calculator</h1>
-        <p class="subtitle">Upload a file and generate its cryptographic hash.</p>
+        <h1><span class="material-symbols-outlined">folder_open</span> File Hash Calculator &amp; Integrity Verifier</h1>
+        <p class="subtitle">Stream and calculate cryptographic hashes (MD5, SHA-1, SHA-256, SHA-384, SHA-512) for local files with real-time progress tracking and instant verification against known release digests.</p>
     </section>
 
     <section class="panel-card">
@@ -413,7 +412,7 @@
 <!-- ======================================================================= -->
 <div id="tab-manifest" class="tool-panel">
     <section class="hero">
-        <h1><span class="material-symbols-outlined">receipt_long</span> Hash Manifest Generator & Verifier</h1>
+        <h1><span class="material-symbols-outlined">receipt_long</span> Hash Manifest Generator &amp; Verifier</h1>
         <p class="subtitle">Generate cryptographic SHA-256 manifests for entire directories or file sets. Verify current files against reference manifests with exact categorization of unchanged, modified, missing, and added files.</p>
     </section>
 
@@ -546,87 +545,7 @@
 </div>
 
 <!-- ======================================================================= -->
-<!-- TOOL 8: LOCAL REFERENCE DATABASE                                        -->
-<!-- ======================================================================= -->
-<div id="tab-database" class="tool-panel">
-    <section class="hero">
-        <h1><span class="material-symbols-outlined">database</span> Local Hash Reference Database</h1>
-        <p class="subtitle">Search, store, and manage known hash records locally using an integrated SQLite database. Track source provenance, tags, and notes with import and export support.</p>
-    </section>
-
-    <section class="panel-card">
-        <label class="input-label" for="db-search-input">Search Exact Reference Hash</label>
-        <div class="input-row">
-            <input type="text" id="db-search-input" class="text-input-field" placeholder="Search exact hash in reference database...">
-            <button id="db-search-btn" class="btn-primary">Search</button>
-        </div>
-        <div id="db-search-result" style="display:none; margin-top:1rem;"></div>
-    </section>
-
-    <section class="panel-card">
-        <div class="toolbar-row">
-            <h3 class="section-title">Local Reference Catalog</h3>
-            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
-                <button id="db-add-toggle-btn" class="btn-primary btn-sm">+ Add New Record</button>
-                <label class="btn-outline btn-sm" style="cursor:pointer;">
-                    <span class="material-symbols-outlined">upload_file</span> Import <input type="file" id="db-import-file" accept=".json,.csv" style="display:none;">
-                </label>
-                <button id="db-export-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export CSV</button>
-                <button id="db-export-json" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export JSON</button>
-            </div>
-        </div>
-
-        <!-- Add Record Form (collapsible) -->
-        <div id="db-add-container" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:1.2rem; margin:1rem 0;">
-            <h4 style="margin-bottom:0.8rem;">Add Reference Hash Record</h4>
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0.8rem; margin-bottom:0.8rem;">
-                <div>
-                    <label class="input-label">Hash Value *</label>
-                    <input type="text" id="db-add-hash" class="text-input-field" placeholder="Hash digest...">
-                </div>
-                <div>
-                    <label class="input-label">Algorithm</label>
-                    <input type="text" id="db-add-alg" class="text-input-field" placeholder="e.g. SHA-256, MD5">
-                </div>
-                <div>
-                    <label class="input-label">Source / Provenance</label>
-                    <input type="text" id="db-add-source" class="text-input-field" placeholder="e.g. NIST NSRL, Internal Audit">
-                </div>
-                <div>
-                    <label class="input-label">Tag / Classification</label>
-                    <input type="text" id="db-add-tag" class="text-input-field" placeholder="e.g. Known Benign, Test Vector">
-                </div>
-            </div>
-            <div style="margin-bottom:0.8rem;">
-                <label class="input-label">Notes / Description</label>
-                <input type="text" id="db-add-notes" class="text-input-field" placeholder="File description, version, release context...">
-            </div>
-            <div style="display:flex; gap:0.6rem;">
-                <button id="db-add-submit" class="btn-primary btn-sm">Save to Database</button>
-                <button id="db-add-cancel" class="btn-secondary btn-sm">Cancel</button>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Hash</th>
-                        <th>Algorithm</th>
-                        <th>Tag</th>
-                        <th>Source / Provenance</th>
-                        <th>Notes</th>
-                        <th style="width:60px;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="db-records-body"></tbody>
-            </table>
-        </div>
-    </section>
-</div>
-
-<!-- ======================================================================= -->
-<!-- TOOL 9: HASH PERFORMANCE BENCHMARK                                      -->
+<!-- TOOL 8: HASH PERFORMANCE BENCHMARK                                      -->
 <!-- ======================================================================= -->
 <div id="tab-benchmark" class="tool-panel">
     <section class="hero">
@@ -718,6 +637,5 @@
 <script src="{{ url_for('static', filename='js/duplicates_tool.js') }}"></script>
 <script src="{{ url_for('static', filename='js/diff_tool.js') }}"></script>
 <script src="{{ url_for('static', filename='js/manifest_tool.js') }}"></script>
-<script src="{{ url_for('static', filename='js/database_tool.js') }}"></script>
 <script src="{{ url_for('static', filename='js/benchmark_tool.js') }}"></script>
 {% endblock %}

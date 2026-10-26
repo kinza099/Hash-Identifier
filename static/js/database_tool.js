@@ -2,8 +2,15 @@
 // Author: Kinza | https://github.com/kinza099
 
 (function () {
-    const searchInput = document.getElementById("db-search-input");
     const searchBtn = document.getElementById("db-search-btn");
+    const databasePanel = document.getElementById("database-panel") || document.getElementById("tab-database");
+
+    // Guard: exit immediately without error if #db-search-btn or database panel does not exist in the DOM
+    if (!searchBtn || !databasePanel) {
+        return;
+    }
+
+    const searchInput = document.getElementById("db-search-input");
     const searchResultBox = document.getElementById("db-search-result");
 
     const recordListBody = document.getElementById("db-records-body");
@@ -222,26 +229,35 @@
         window.location.href = `/api/db/export?format=${format}`;
     }
 
-    searchBtn.addEventListener("click", searchExactHash);
-    searchInput.addEventListener("keyup", (e) => {
-        if (e.key === "Enter") searchExactHash();
-    });
+    if (searchBtn) searchBtn.addEventListener("click", searchExactHash);
+    if (searchInput) {
+        searchInput.addEventListener("keyup", (e) => {
+            if (e.key === "Enter") searchExactHash();
+        });
+    }
 
-    addFormToggleBtn.addEventListener("click", () => {
-        const isHidden = addFormContainer.style.display === "none";
-        addFormContainer.style.display = isHidden ? "block" : "none";
-        if (isHidden) addHashInput.focus();
-    });
+    if (addFormToggleBtn) {
+        addFormToggleBtn.addEventListener("click", () => {
+            if (!addFormContainer) return;
+            const isHidden = addFormContainer.style.display === "none";
+            addFormContainer.style.display = isHidden ? "block" : "none";
+            if (isHidden && addHashInput) addHashInput.focus();
+        });
+    }
 
-    addCancelBtn.addEventListener("click", () => {
-        addFormContainer.style.display = "none";
-    });
+    if (addCancelBtn) {
+        addCancelBtn.addEventListener("click", () => {
+            if (addFormContainer) addFormContainer.style.display = "none";
+        });
+    }
 
-    addSubmitBtn.addEventListener("click", addRecord);
+    if (addSubmitBtn) addSubmitBtn.addEventListener("click", addRecord);
 
-    exportCsvBtn.addEventListener("click", () => exportDb("csv"));
-    exportJsonBtn.addEventListener("click", () => exportDb("json"));
+    if (exportCsvBtn) exportCsvBtn.addEventListener("click", () => exportDb("csv"));
+    if (exportJsonBtn) exportJsonBtn.addEventListener("click", () => exportDb("json"));
 
     // Initial load
-    loadRecords();
+    if (recordListBody) {
+        loadRecords();
+    }
 })();

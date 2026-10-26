@@ -18,6 +18,9 @@ def test_index_and_author_routes(client):
     assert res_index.status_code == 200
     assert b"Hash Identifier" in res_index.data
     assert b"File Hash Calculator" in res_index.data
+    # Verify database tab is removed from index.html UI
+    assert b"tab-database" not in res_index.data
+    assert b'data-tab="tab-database"' not in res_index.data
 
     res_author = client.get("/author")
     assert res_author.status_code == 200

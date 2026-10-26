@@ -84,6 +84,7 @@
     }
 
     async function runBatchScan() {
+        if (!inputArea) return;
         const text = inputArea.value.trim();
         if (!text) {
             showToast("Please paste hashes or upload a TXT/CSV file first.");
@@ -91,8 +92,10 @@
             return;
         }
 
-        scanBtn.disabled = true;
-        scanBtn.textContent = "Scanning Batch...";
+        if (scanBtn) {
+            scanBtn.disabled = true;
+            scanBtn.textContent = "Scanning Batch...";
+        }
 
         try {
             const isCsv = text.includes(",") && (text.includes("\n") || text.includes("\r"));
@@ -105,22 +108,24 @@
             currentBatchData = data;
             renderBatchSummary(data);
             applyFilters();
-            resultsContainer.style.display = "block";
-            summarySection.style.display = "flex";
+            if (resultsContainer) resultsContainer.style.display = "block";
+            if (summarySection) summarySection.style.display = "flex";
         } catch (err) {
             showToast("Error scanning batch. Please verify input format.");
         } finally {
-            scanBtn.disabled = false;
-            scanBtn.textContent = "Scan Hashes";
+            if (scanBtn) {
+                scanBtn.disabled = false;
+                scanBtn.textContent = "Scan Hashes";
+            }
         }
     }
 
     function renderBatchSummary(data) {
-        totalCountEl.textContent = data.total_entries;
-        validCountEl.textContent = data.valid_count;
-        invalidCountEl.textContent = data.invalid_count;
-        duplicateCountEl.textContent = data.total_duplicate_entries;
-        uniqueCountEl.textContent = data.unique_hashes_count;
+        if (totalCountEl) totalCountEl.textContent = data.total_entries;
+        if (validCountEl) validCountEl.textContent = data.valid_count;
+        if (invalidCountEl) invalidCountEl.textContent = data.invalid_count;
+        if (duplicateCountEl) duplicateCountEl.textContent = data.total_duplicate_entries;
+        if (uniqueCountEl) uniqueCountEl.textContent = data.unique_hashes_count;
     }
 
     function applyFilters() {
@@ -266,19 +271,23 @@
         return div.innerHTML;
     }
 
-    scanBtn.addEventListener("click", runBatchScan);
-    clearBtn.addEventListener("click", () => {
-        inputArea.value = "";
-        currentBatchData = null;
-        resultsContainer.style.display = "none";
-        summarySection.style.display = "none";
-        inputArea.focus();
-    });
+    if (scanBtn) scanBtn.addEventListener("click", runBatchScan);
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            if (inputArea) {
+                inputArea.value = "";
+                inputArea.focus();
+            }
+            currentBatchData = null;
+            if (resultsContainer) resultsContainer.style.display = "none";
+            if (summarySection) summarySection.style.display = "none";
+        });
+    }
 
-    searchInput.addEventListener("input", applyFilters);
-    filterValidity.addEventListener("change", applyFilters);
-    filterConfidence.addEventListener("change", applyFilters);
+    if (searchInput) searchInput.addEventListener("input", applyFilters);
+    if (filterValidity) filterValidity.addEventListener("change", applyFilters);
+    if (filterConfidence) filterConfidence.addEventListener("change", applyFilters);
 
-    exportCsvBtn.addEventListener("click", exportToCsv);
-    exportJsonBtn.addEventListener("click", exportToJson);
+    if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportToCsv);
+    if (exportJsonBtn) exportJsonBtn.addEventListener("click", exportToJson);
 })();

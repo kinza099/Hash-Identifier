@@ -34,16 +34,19 @@
     }
 
     async function identify() {
+        if (!input) return;
         const value = input.value.trim();
         if (!value) {
-            resultsSection.style.display = "none";
-            metaRow.style.display = "none";
-            strengthWrap.style.display = "none";
+            if (resultsSection) resultsSection.style.display = "none";
+            if (metaRow) metaRow.style.display = "none";
+            if (strengthWrap) strengthWrap.style.display = "none";
             return;
         }
 
-        btn.disabled = true;
-        btn.textContent = "Analyzing...";
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Analyzing...";
+        }
 
         try {
             const res = await fetch("/api/identify", {
@@ -55,11 +58,15 @@
             renderResults(data);
             addToHistory(data);
         } catch (err) {
-            resultsList.innerHTML = `<div class="no-match"><span class="material-symbols-outlined">warning</span> Network or server error occurred. Please try again.</div>`;
-            resultsSection.style.display = "block";
+            if (resultsList) {
+                resultsList.innerHTML = `<div class="no-match"><span class="material-symbols-outlined">warning</span> Network or server error occurred. Please try again.</div>`;
+            }
+            if (resultsSection) resultsSection.style.display = "block";
         } finally {
-            btn.disabled = false;
-            btn.textContent = "Identify";
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "Identify";
+            }
         }
     }
 
@@ -107,7 +114,7 @@
             resultsList.innerHTML = `
                 <div class="no-match">
                     <p><span class="material-symbols-outlined">cancel</span> ${escapeHtml(data.message || "No known hash format matched.")}</p>
-                    <p class="no-match-tip">Tip: Ensure no leading/trailing quotes or incomplete paste. You can also search the Local Reference Database.</p>
+                    <p class="no-match-tip">Tip: Ensure no leading or trailing whitespace, quotes, or truncated characters in the pasted hash string.</p>
                 </div>`;
             return;
         }
@@ -240,29 +247,41 @@
         return div.innerHTML;
     }
 
-    btn.addEventListener("click", identify);
-    input.addEventListener("keyup", function (e) {
-        if (e.key === "Enter") identify();
-    });
-    clearBtn.addEventListener("click", function () {
-        input.value = "";
-        resultsSection.style.display = "none";
-        metaRow.style.display = "none";
-        strengthWrap.style.display = "none";
-        input.focus();
-    });
-    historyClearBtn.addEventListener("click", function () {
-        history = [];
-        renderHistory();
-    });
+    if (btn) btn.addEventListener("click", identify);
+    if (input) {
+        input.addEventListener("keyup", function (e) {
+            if (e.key === "Enter") identify();
+        });
+    }
+    if (clearBtn) {
+        clearBtn.addEventListener("click", function () {
+            if (input) {
+                input.value = "";
+                input.focus();
+            }
+            if (resultsSection) resultsSection.style.display = "none";
+            if (metaRow) metaRow.style.display = "none";
+            if (strengthWrap) strengthWrap.style.display = "none";
+        });
+    }
+    if (historyClearBtn) {
+        historyClearBtn.addEventListener("click", function () {
+            history = [];
+            renderHistory();
+        });
+    }
 
     // Expose identify function globally so other tools (Batch Scanner, Lookup DB) can link directly to it
     window.inspectSingleHash = function (hashStr) {
         if (window.switchToolkitTab) {
             window.switchToolkitTab("tab-identifier");
         }
-        input.value = hashStr;
-        identify();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (input) {
+            input.value = hashStr;
+            identify();
+        }
+        if (typeof window.scrollTo === "function") {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
     };
 })();

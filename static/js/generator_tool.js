@@ -69,17 +69,19 @@
     }
 
     function updateCounts() {
+        if (!textInput) return;
         const text = textInput.value;
         const charLen = text.length;
         const utf8Bytes = (window.CryptoEngine && window.CryptoEngine.stringToUtf8Bytes)
             ? window.CryptoEngine.stringToUtf8Bytes(text).length
             : new TextEncoder().encode(text).length;
 
-        charCountEl.textContent = `${charLen} characters`;
-        byteCountEl.textContent = `${utf8Bytes} bytes (UTF-8)`;
+        if (charCountEl) charCountEl.textContent = `${charLen} characters`;
+        if (byteCountEl) byteCountEl.textContent = `${utf8Bytes} bytes (UTF-8)`;
     }
 
     function generate() {
+        if (!textInput) return;
         const text = textInput.value; // May be empty string: explicitly supported!
         updateCounts();
 
@@ -107,8 +109,9 @@
     }
 
     function renderGrid(text) {
+        if (!resultsGrid) return;
         resultsGrid.style.display = "grid";
-        copyAllBtn.style.display = "inline-flex";
+        if (copyAllBtn) copyAllBtn.style.display = "inline-flex";
 
         resultsGrid.innerHTML = ALGORITHMS.map((alg) => {
             const digest = currentHashes[alg.id] || "";
@@ -172,22 +175,30 @@
         return div.innerHTML;
     }
 
-    generateBtn.addEventListener("click", generate);
-    textInput.addEventListener("input", () => {
-        updateCounts();
-        generate();
-    });
+    if (generateBtn) generateBtn.addEventListener("click", generate);
+    if (textInput) {
+        textInput.addEventListener("input", () => {
+            updateCounts();
+            generate();
+        });
+    }
 
-    clearBtn.addEventListener("click", () => {
-        textInput.value = "";
-        updateCounts();
-        generate();
-        textInput.focus();
-    });
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            if (textInput) {
+                textInput.value = "";
+                textInput.focus();
+            }
+            updateCounts();
+            generate();
+        });
+    }
 
-    copyAllBtn.addEventListener("click", copyAll);
+    if (copyAllBtn) copyAllBtn.addEventListener("click", copyAll);
 
     // Initial render for empty string so user immediately sees canonical baseline empty hashes
-    updateCounts();
-    generate();
+    if (textInput || resultsGrid) {
+        updateCounts();
+        generate();
+    }
 })();

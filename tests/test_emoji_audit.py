@@ -12,7 +12,7 @@ EMOJI_PATTERN = re.compile(
     flags=re.UNICODE
 )
 
-TARGET_DIRS = ["templates", "static/js", "static/css", "core"]
+TARGET_DIRS = ["templates", "static/js", "static/css", "core", "tests"]
 
 def test_zero_emojis_in_frontend_and_core():
     """Verify that zero unicode emojis exist in templates, js, css, and core."""

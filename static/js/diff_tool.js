@@ -65,16 +65,18 @@
     }
 
     async function runDiff() {
-        const textA = listAInput.value.trim();
-        const textB = listBInput.value.trim();
+        const textA = listAInput ? listAInput.value.trim() : "";
+        const textB = listBInput ? listBInput.value.trim() : "";
 
         if (!textA && !textB) {
             showToast("Please provide at least one list to analyze.");
             return;
         }
 
-        compareBtn.disabled = true;
-        compareBtn.textContent = "Comparing...";
+        if (compareBtn) {
+            compareBtn.disabled = true;
+            compareBtn.textContent = "Comparing...";
+        }
 
         try {
             const isCaseSens = caseToggle ? caseToggle.checked : false;
@@ -91,34 +93,39 @@
             currentDiffData = data;
             renderSummary(data.summary);
             renderTab();
-            summarySection.style.display = "flex";
-            resultsContainer.style.display = "block";
+            if (summarySection) summarySection.style.display = "flex";
+            if (resultsContainer) resultsContainer.style.display = "block";
         } catch (err) {
             showToast("Error comparing hash lists.");
         } finally {
-            compareBtn.disabled = false;
-            compareBtn.textContent = "Compare Lists";
+            if (compareBtn) {
+                compareBtn.disabled = false;
+                compareBtn.textContent = "Compare Lists";
+            }
         }
     }
 
     function renderSummary(summary) {
-        commonCountEl.textContent = summary.common_count;
-        addedCountEl.textContent = summary.added_count;
-        removedCountEl.textContent = summary.removed_count;
-        dupCountAEl.textContent = `${summary.duplicate_occurrences_a} dups in A`;
-        dupCountBEl.textContent = `${summary.duplicate_occurrences_b} dups in B`;
+        if (!summary) return;
+        if (commonCountEl) commonCountEl.textContent = summary.common_count;
+        if (addedCountEl) addedCountEl.textContent = summary.added_count;
+        if (removedCountEl) removedCountEl.textContent = summary.removed_count;
+        if (dupCountAEl) dupCountAEl.textContent = `${summary.duplicate_occurrences_a} dups in A`;
+        if (dupCountBEl) dupCountBEl.textContent = `${summary.duplicate_occurrences_b} dups in B`;
 
-        tabCommonBtn.textContent = `Common (${summary.common_count})`;
-        tabAddedBtn.textContent = `Added in B (${summary.added_count})`;
-        tabRemovedBtn.textContent = `Removed from A (${summary.removed_count})`;
+        if (tabCommonBtn) tabCommonBtn.textContent = `Common (${summary.common_count})`;
+        if (tabAddedBtn) tabAddedBtn.textContent = `Added in B (${summary.added_count})`;
+        if (tabRemovedBtn) tabRemovedBtn.textContent = `Removed from A (${summary.removed_count})`;
     }
 
     function setTab(tabName) {
         activeTab = tabName;
-        [tabCommonBtn, tabAddedBtn, tabRemovedBtn].forEach((b) => b.classList.remove("active"));
-        if (tabName === "common") tabCommonBtn.classList.add("active");
-        else if (tabName === "added") tabAddedBtn.classList.add("active");
-        else if (tabName === "removed") tabRemovedBtn.classList.add("active");
+        [tabCommonBtn, tabAddedBtn, tabRemovedBtn].forEach((b) => {
+            if (b) b.classList.remove("active");
+        });
+        if (tabName === "common" && tabCommonBtn) tabCommonBtn.classList.add("active");
+        else if (tabName === "added" && tabAddedBtn) tabAddedBtn.classList.add("active");
+        else if (tabName === "removed" && tabRemovedBtn) tabRemovedBtn.classList.add("active");
         renderTab();
     }
 
@@ -228,22 +235,24 @@
         return div.innerHTML;
     }
 
-    compareBtn.addEventListener("click", runDiff);
-    clearBtn.addEventListener("click", () => {
-        listAInput.value = "";
-        listBInput.value = "";
-        currentDiffData = null;
-        summarySection.style.display = "none";
-        resultsContainer.style.display = "none";
-    });
+    if (compareBtn) compareBtn.addEventListener("click", runDiff);
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            if (listAInput) listAInput.value = "";
+            if (listBInput) listBInput.value = "";
+            currentDiffData = null;
+            if (summarySection) summarySection.style.display = "none";
+            if (resultsContainer) resultsContainer.style.display = "none";
+        });
+    }
 
-    tabCommonBtn.addEventListener("click", () => setTab("common"));
-    tabAddedBtn.addEventListener("click", () => setTab("added"));
-    tabRemovedBtn.addEventListener("click", () => setTab("removed"));
+    if (tabCommonBtn) tabCommonBtn.addEventListener("click", () => setTab("common"));
+    if (tabAddedBtn) tabAddedBtn.addEventListener("click", () => setTab("added"));
+    if (tabRemovedBtn) tabRemovedBtn.addEventListener("click", () => setTab("removed"));
 
-    searchInput.addEventListener("input", renderTab);
+    if (searchInput) searchInput.addEventListener("input", renderTab);
     if (caseToggle) caseToggle.addEventListener("change", runDiff);
 
-    exportCsvBtn.addEventListener("click", exportCsv);
-    exportJsonBtn.addEventListener("click", exportJson);
+    if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportCsv);
+    if (exportJsonBtn) exportJsonBtn.addEventListener("click", exportJson);
 })();

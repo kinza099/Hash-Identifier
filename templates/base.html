@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}Hash Identifier & Analysis Toolkit{% endblock %} | by Kinza</title>
+<title>{% block title %}Hash Identifier &amp; Analysis Toolkit{% endblock %} | by Kinza &amp; Salman Mallah</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -11,14 +11,19 @@
 
 <nav class="navbar">
     <div class="nav-left">
-        <a href="{{ url_for('index') }}" style="text-decoration:none; color:inherit;">
-            <span class="logo"><span class="material-symbols-outlined logo-icon">lock</span> Hash<span class="accent">ID</span></span>
+        <a href="{{ url_for('index') }}" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:0.6rem;">
+            <span class="logo"><span class="material-symbols-outlined logo-icon">shield_lock</span> Hash<span class="accent">ID</span></span>
+            <span class="logo-badge">v2.0 Toolkit</span>
         </a>
-        <span class="logo-badge">Analysis Toolkit</span>
+        <div class="nav-tagline">Cryptographic Analysis &amp; Integrity Toolkit</div>
     </div>
     <div class="nav-right">
+        <div class="engine-status-pill" title="Engine: Client In-Browser (Private) &mdash; All hash identification, file hashing, and cryptographic operations execute locally in your browser. Zero payload transmission.">
+            <span class="status-pulse-dot"></span>
+            <span class="engine-status-text">Engine: Client In-Browser (Private)</span>
+        </div>
         <a href="{{ url_for('index') }}" class="nav-link">Toolkit</a>
-        <a href="{{ url_for('author') }}" class="nav-link">Author</a>
+        <a href="{{ url_for('author') }}" class="nav-link">Authors</a>
         <button id="theme-toggle" class="theme-toggle" title="Toggle dark / light mode">
             <span id="theme-icon" class="material-symbols-outlined">dark_mode</span>
         </button>

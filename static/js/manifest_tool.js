@@ -67,19 +67,21 @@
     }
 
     // Mode Toggle
-    modeGenBtn.addEventListener("click", () => {
-        modeGenBtn.classList.add("active");
-        modeVerBtn.classList.remove("active");
-        genSection.style.display = "block";
-        verSection.style.display = "none";
-    });
+    if (modeGenBtn && modeVerBtn) {
+        modeGenBtn.addEventListener("click", () => {
+            modeGenBtn.classList.add("active");
+            modeVerBtn.classList.remove("active");
+            if (genSection) genSection.style.display = "block";
+            if (verSection) verSection.style.display = "none";
+        });
 
-    modeVerBtn.addEventListener("click", () => {
-        modeVerBtn.classList.add("active");
-        modeGenBtn.classList.remove("active");
-        genSection.style.display = "none";
-        verSection.style.display = "block";
-    });
+        modeVerBtn.addEventListener("click", () => {
+            modeVerBtn.classList.add("active");
+            modeGenBtn.classList.remove("active");
+            if (genSection) genSection.style.display = "none";
+            if (verSection) verSection.style.display = "block";
+        });
+    }
 
     // -------------------------------------------------------------------------
     // Manifest Generation
@@ -92,8 +94,8 @@
     }
 
     function updateGenCount() {
-        genSelectedCount.textContent = `${selectedFilesToGen.length} file(s) selected`;
-        genStartBtn.disabled = selectedFilesToGen.length === 0;
+        if (genSelectedCount) genSelectedCount.textContent = `${selectedFilesToGen.length} file(s) selected`;
+        if (genStartBtn) genStartBtn.disabled = selectedFilesToGen.length === 0;
     }
 
     if (genFilesInput) genFilesInput.addEventListener("change", (e) => addFilesToGen(e.target.files));
@@ -109,51 +111,54 @@
         });
     }
 
-    genStartBtn.addEventListener("click", async () => {
-        if (selectedFilesToGen.length === 0) return;
+    if (genStartBtn) {
+        genStartBtn.addEventListener("click", async () => {
+            if (selectedFilesToGen.length === 0) return;
 
-        genStartBtn.disabled = true;
-        genProgressWrap.style.display = "block";
-        genResultsCard.style.display = "none";
+            genStartBtn.disabled = true;
+            if (genProgressWrap) genProgressWrap.style.display = "block";
+            if (genResultsCard) genResultsCard.style.display = "none";
 
-        const manifestEntries = [];
-        const total = selectedFilesToGen.length;
+            const manifestEntries = [];
+            const total = selectedFilesToGen.length;
 
-        for (let i = 0; i < total; i++) {
-            const file = selectedFilesToGen[i];
-            const pct = Math.round(((i) / total) * 100);
-            genProgressFill.style.width = pct + "%";
-            genProgressText.textContent = `Hashing file ${i + 1} of ${total}: ${file.name} (${formatBytes(file.size)})`;
+            for (let i = 0; i < total; i++) {
+                const file = selectedFilesToGen[i];
+                const pct = Math.round(((i) / total) * 100);
+                if (genProgressFill) genProgressFill.style.width = pct + "%";
+                if (genProgressText) genProgressText.textContent = `Hashing file ${i + 1} of ${total}: ${file.name} (${formatBytes(file.size)})`;
 
-            const { hashes } = await window.CryptoEngine.hashFileStreaming(file, ["sha256"]);
-            const relPath = file.webkitRelativePath || file.name;
+                const { hashes } = await window.CryptoEngine.hashFileStreaming(file, ["sha256"]);
+                const relPath = file.webkitRelativePath || file.name;
 
-            manifestEntries.push({
-                path: relPath.replace(/\\/g, "/"),
-                name: file.name,
-                size: file.size,
+                manifestEntries.push({
+                    path: relPath.replace(/\\/g, "/"),
+                    name: file.name,
+                    size: file.size,
+                    algorithm: "SHA-256",
+                    hash: hashes.sha256,
+                });
+            }
+
+            if (genProgressFill) genProgressFill.style.width = "100%";
+            if (genProgressText) genProgressText.textContent = `Completed SHA-256 manifest generation for ${total} file(s).`;
+
+            generatedManifest = {
+                version: "1.0",
+                created_at: new Date().toISOString(),
                 algorithm: "SHA-256",
-                hash: hashes.sha256,
-            });
-        }
+                total_files: manifestEntries.length,
+                files: manifestEntries,
+            };
 
-        genProgressFill.style.width = "100%";
-        genProgressText.textContent = `Completed SHA-256 manifest generation for ${total} file(s).`;
-
-        generatedManifest = {
-            version: "1.0",
-            created_at: new Date().toISOString(),
-            algorithm: "SHA-256",
-            total_files: manifestEntries.length,
-            files: manifestEntries,
-        };
-
-        renderGenTable(manifestEntries);
-        genResultsCard.style.display = "block";
-        genStartBtn.disabled = false;
-    });
+            renderGenTable(manifestEntries);
+            if (genResultsCard) genResultsCard.style.display = "block";
+            genStartBtn.disabled = false;
+        });
+    }
 
     function renderGenTable(entries) {
+        if (!genTableBody) return;
         genTableBody.innerHTML = entries.map((entry, idx) => `
             <tr>
                 <td>${idx + 1}</td>
@@ -165,24 +170,28 @@
         `).join("");
     }
 
-    genDownloadJsonBtn.addEventListener("click", () => {
-        if (!generatedManifest) return;
-        downloadBlob(JSON.stringify(generatedManifest, null, 2), "manifest_sha256.json", "application/json;charset=utf-8;");
-    });
+    if (genDownloadJsonBtn) {
+        genDownloadJsonBtn.addEventListener("click", () => {
+            if (!generatedManifest) return;
+            downloadBlob(JSON.stringify(generatedManifest, null, 2), "manifest_sha256.json", "application/json;charset=utf-8;");
+        });
+    }
 
-    genDownloadCsvBtn.addEventListener("click", () => {
-        if (!generatedManifest) return;
-        const headers = ["path", "name", "size_bytes", "algorithm", "sha256_hash"];
-        const rows = generatedManifest.files.map((f) => [
-            `"${f.path.replace(/"/g, '""')}"`,
-            `"${f.name.replace(/"/g, '""')}"`,
-            f.size,
-            "SHA-256",
-            `"${f.hash}"`
-        ]);
-        const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
-        downloadBlob(csv, "manifest_sha256.csv", "text/csv;charset=utf-8;");
-    });
+    if (genDownloadCsvBtn) {
+        genDownloadCsvBtn.addEventListener("click", () => {
+            if (!generatedManifest) return;
+            const headers = ["path", "name", "size_bytes", "algorithm", "sha256_hash"];
+            const rows = generatedManifest.files.map((f) => [
+                `"${f.path.replace(/"/g, '""')}"`,
+                `"${f.name.replace(/"/g, '""')}"`,
+                f.size,
+                "SHA-256",
+                `"${f.hash}"`
+            ]);
+            const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+            downloadBlob(csv, "manifest_sha256.csv", "text/csv;charset=utf-8;");
+        });
+    }
 
     // -------------------------------------------------------------------------
     // Manifest Verification
@@ -204,7 +213,7 @@
         for (let i = 0; i < fileList.length; i++) {
             selectedTargetFiles.push(fileList[i]);
         }
-        verTargetCount.textContent = `${selectedTargetFiles.length} file(s) loaded for verification`;
+        if (verTargetCount) verTargetCount.textContent = `${selectedTargetFiles.length} file(s) loaded for verification`;
     }
 
     if (verTargetFilesInput) verTargetFilesInput.addEventListener("change", (e) => addTargetFiles(e.target.files));
@@ -220,96 +229,101 @@
         });
     }
 
-    verStartBtn.addEventListener("click", async () => {
-        const manifestStr = verManifestText.value.trim();
-        if (!manifestStr) {
-            showToast("Please provide or load the reference manifest first.");
-            verManifestText.focus();
-            return;
-        }
+    if (verStartBtn) {
+        verStartBtn.addEventListener("click", async () => {
+            const manifestStr = verManifestText ? verManifestText.value.trim() : "";
+            if (!manifestStr) {
+                showToast("Please provide or load the reference manifest first.");
+                if (verManifestText) verManifestText.focus();
+                return;
+            }
 
-        if (selectedTargetFiles.length === 0) {
-            showToast("Please select the target files or directory to verify.");
-            return;
-        }
+            if (selectedTargetFiles.length === 0) {
+                showToast("Please select the target files or directory to verify.");
+                return;
+            }
 
-        verStartBtn.disabled = true;
-        verProgressWrap.style.display = "block";
-        verResultsCard.style.display = "none";
+            verStartBtn.disabled = true;
+            if (verProgressWrap) verProgressWrap.style.display = "block";
+            if (verResultsCard) verResultsCard.style.display = "none";
 
-        const currentFilesData = [];
-        const total = selectedTargetFiles.length;
+            const currentFilesData = [];
+            const total = selectedTargetFiles.length;
 
-        for (let i = 0; i < total; i++) {
-            const file = selectedTargetFiles[i];
-            const pct = Math.round(((i) / total) * 100);
-            verProgressFill.style.width = pct + "%";
-            verProgressText.textContent = `Verifying file ${i + 1} of ${total}: ${file.name}`;
+            for (let i = 0; i < total; i++) {
+                const file = selectedTargetFiles[i];
+                const pct = Math.round(((i) / total) * 100);
+                if (verProgressFill) verProgressFill.style.width = pct + "%";
+                if (verProgressText) verProgressText.textContent = `Verifying file ${i + 1} of ${total}: ${file.name}`;
 
-            const { hashes } = await window.CryptoEngine.hashFileStreaming(file, ["sha256"]);
-            const relPath = file.webkitRelativePath || file.name;
+                const { hashes } = await window.CryptoEngine.hashFileStreaming(file, ["sha256"]);
+                const relPath = file.webkitRelativePath || file.name;
 
-            currentFilesData.push({
-                path: relPath.replace(/\\/g, "/"),
-                name: file.name,
-                size: file.size,
-                hash: hashes.sha256,
-            });
-        }
+                currentFilesData.push({
+                    path: relPath.replace(/\\/g, "/"),
+                    name: file.name,
+                    size: file.size,
+                    hash: hashes.sha256,
+                });
+            }
 
-        verProgressFill.style.width = "100%";
-        verProgressText.textContent = "Comparing digests with reference manifest...";
+            if (verProgressFill) verProgressFill.style.width = "100%";
+            if (verProgressText) verProgressText.textContent = "Comparing digests with reference manifest...";
 
-        try {
-            const res = await fetch("/api/manifest/verify", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    manifest: manifestStr,
-                    current_files: currentFilesData,
-                }),
-            });
-            const data = await res.json();
-            verificationResult = data;
-            renderVerificationResults(data);
-            verResultsCard.style.display = "block";
-        } catch (err) {
-            showToast("Verification failed: invalid manifest structure.");
-        } finally {
-            verStartBtn.disabled = false;
-        }
-    });
+            try {
+                const res = await fetch("/api/manifest/verify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        manifest: manifestStr,
+                        current_files: currentFilesData,
+                    }),
+                });
+                const data = await res.json();
+                verificationResult = data;
+                renderVerificationResults(data);
+                if (verResultsCard) verResultsCard.style.display = "block";
+            } catch (err) {
+                showToast("Verification failed: invalid manifest structure.");
+            } finally {
+                verStartBtn.disabled = false;
+            }
+        });
+    }
 
     function renderVerificationResults(data) {
+        if (!data || !data.summary) return;
         const sum = data.summary;
         const isOk = data.fully_intact;
 
-        verStatusBox.className = isOk ? "alert-box alert-match" : "alert-box alert-mismatch";
-        verStatusBox.innerHTML = `
-            <div class="alert-title">${isOk ? '<span class="material-symbols-outlined">check_circle</span> MANIFEST VERIFICATION SUCCESSFUL' : '<span class="material-symbols-outlined">warning</span> MANIFEST DISCREPANCIES DETECTED'}</div>
-            <div class="alert-body">
-                ${escapeHtml(data.verification_statement)}
-                <div class="manifest-metrics">
-                    <span class="m-pill">Unchanged: <strong>${sum.unchanged_count}</strong></span>
-                    <span class="m-pill">Modified: <strong>${sum.modified_count}</strong></span>
-                    <span class="m-pill">Missing: <strong>${sum.missing_count}</strong></span>
-                    <span class="m-pill">Newly Added: <strong>${sum.newly_added_count}</strong></span>
+        if (verStatusBox) {
+            verStatusBox.className = isOk ? "alert-box alert-match" : "alert-box alert-mismatch";
+            verStatusBox.innerHTML = `
+                <div class="alert-title">${isOk ? '<span class="material-symbols-outlined">check_circle</span> MANIFEST VERIFICATION SUCCESSFUL' : '<span class="material-symbols-outlined">warning</span> MANIFEST DISCREPANCIES DETECTED'}</div>
+                <div class="alert-body">
+                    ${escapeHtml(data.verification_statement)}
+                    <div class="manifest-metrics">
+                        <span class="m-pill">Unchanged: <strong>${sum.unchanged_count}</strong></span>
+                        <span class="m-pill">Modified: <strong>${sum.modified_count}</strong></span>
+                        <span class="m-pill">Missing: <strong>${sum.missing_count}</strong></span>
+                        <span class="m-pill">Newly Added: <strong>${sum.newly_added_count}</strong></span>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
 
         const allRows = [];
 
-        data.modified.forEach((m) => {
+        (data.modified || []).forEach((m) => {
             allRows.push({
                 path: m.path,
                 status: "MODIFIED",
                 statusClass: "badge-danger",
-                msg: `Expected ${m.expected_hash.slice(0, 10)}…, calculated ${m.actual_hash.slice(0, 10)}…`
+                msg: `Expected ${(m.expected_hash || '').slice(0, 10)}…, calculated ${(m.actual_hash || '').slice(0, 10)}…`
             });
         });
 
-        data.missing.forEach((m) => {
+        (data.missing || []).forEach((m) => {
             allRows.push({
                 path: m.path,
                 status: "MISSING",
@@ -318,7 +332,7 @@
             });
         });
 
-        data.newly_added.forEach((a) => {
+        (data.newly_added || []).forEach((a) => {
             allRows.push({
                 path: a.path,
                 status: "NEWLY_ADDED",
@@ -327,7 +341,7 @@
             });
         });
 
-        data.unchanged.forEach((u) => {
+        (data.unchanged || []).forEach((u) => {
             allRows.push({
                 path: u.path,
                 status: "UNCHANGED",
@@ -336,33 +350,39 @@
             });
         });
 
-        verTableBody.innerHTML = allRows.map((r, idx) => `
-            <tr>
-                <td>${idx + 1}</td>
-                <td><code>${escapeHtml(r.path)}</code></td>
-                <td><span class="badge-status ${r.status.toLowerCase()}">${escapeHtml(r.status)}</span></td>
-                <td>${escapeHtml(r.msg)}</td>
-            </tr>
-        `).join("");
+        if (verTableBody) {
+            verTableBody.innerHTML = allRows.map((r, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td><code>${escapeHtml(r.path)}</code></td>
+                    <td><span class="badge-status ${r.status.toLowerCase()}">${escapeHtml(r.status)}</span></td>
+                    <td>${escapeHtml(r.msg)}</td>
+                </tr>
+            `).join("");
+        }
     }
 
-    verExportCsvBtn.addEventListener("click", () => {
-        if (!verificationResult) return;
-        const headers = ["Path", "Status", "Details"];
-        const rows = [];
-        verificationResult.modified.forEach(m => rows.push([`"${m.path}"`, "MODIFIED", `"${m.message}"`]));
-        verificationResult.missing.forEach(m => rows.push([`"${m.path}"`, "MISSING", `"${m.message}"`]));
-        verificationResult.newly_added.forEach(a => rows.push([`"${a.path}"`, "NEWLY_ADDED", `"${a.message}"`]));
-        verificationResult.unchanged.forEach(u => rows.push([`"${u.path}"`, "UNCHANGED", `"${u.message}"`]));
+    if (verExportCsvBtn) {
+        verExportCsvBtn.addEventListener("click", () => {
+            if (!verificationResult) return;
+            const headers = ["Path", "Status", "Details"];
+            const rows = [];
+            (verificationResult.modified || []).forEach(m => rows.push([`"${m.path}"`, "MODIFIED", `"${m.message}"`]));
+            (verificationResult.missing || []).forEach(m => rows.push([`"${m.path}"`, "MISSING", `"${m.message}"`]));
+            (verificationResult.newly_added || []).forEach(a => rows.push([`"${a.path}"`, "NEWLY_ADDED", `"${a.message}"`]));
+            (verificationResult.unchanged || []).forEach(u => rows.push([`"${u.path}"`, "UNCHANGED", `"${u.message}"`]));
 
-        const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
-        downloadBlob(csv, "manifest_verification_report.csv", "text/csv;charset=utf-8;");
-    });
+            const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+            downloadBlob(csv, "manifest_verification_report.csv", "text/csv;charset=utf-8;");
+        });
+    }
 
-    verExportJsonBtn.addEventListener("click", () => {
-        if (!verificationResult) return;
-        downloadBlob(JSON.stringify(verificationResult, null, 2), "manifest_verification_report.json", "application/json;charset=utf-8;");
-    });
+    if (verExportJsonBtn) {
+        verExportJsonBtn.addEventListener("click", () => {
+            if (!verificationResult) return;
+            downloadBlob(JSON.stringify(verificationResult, null, 2), "manifest_verification_report.json", "application/json;charset=utf-8;");
+        });
+    }
 
     function downloadBlob(content, filename, mimeType) {
         const blob = new Blob([content], { type: mimeType });

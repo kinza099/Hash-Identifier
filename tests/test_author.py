@@ -24,7 +24,7 @@ def test_author_endpoint_status_and_dual_authors(client):
 
     # Verify both author cards exist
     assert 'id="author-card-kinza"' in html
-    assert 'id="author-card-salman"' in html or 'id="author-card-salman-mallah"' in html
+    assert 'id="author-card-salman-mallah"' in html
 
     # Verify avatar rendering for both authors (images and fallback initials)
     assert "https://github.com/kinza099.png" in html
@@ -33,9 +33,10 @@ def test_author_endpoint_status_and_dual_authors(client):
     assert ">K<" in html
     assert ">S<" in html
 
-    # Verify professional roles
-    assert "Security" in html
+    # Verify professional roles and bios
+    assert "Creator &amp; Lead Security Developer" in html or "Security" in html
     assert "Malware Analyst" in html
+    assert "Final-year B.S. Cyber Security student at MUET" in html
 
     # Verify GitHub profile links
     assert "https://github.com/kinza099" in html
@@ -115,8 +116,11 @@ def test_author_cards_in_grid(client):
     res = client.get("/author")
     assert res.status_code == 200
     html = res.data.decode("utf-8")
-    grid_section = html.split('class="authors-grid"')[1].split('<!-- PROJECT MISSION CARD -->')[0]
-    card_count = grid_section.count('class="author-card"')
+    assert 'class="authors-grid"' in html
+    grid_section = html.split('class="authors-grid"')[1]
+    assert 'id="author-card-kinza"' in grid_section
+    assert 'id="author-card-salman-mallah"' in grid_section
+    card_count = html.count('class="author-card"')
     assert card_count == 2
 
 

@@ -29,7 +29,7 @@ def test_known_phrase_test_vectors():
 
 def test_unicode_consistency():
     """Verify non-ASCII characters encode to UTF-8 properly."""
-    text = "CyberSec🔐安全Кибербезопасность🔒"
+    text = "CyberSec_安全_Кибербезопасность_مرحبا_Security"
     res1 = hash_text(text)
     res2 = hash_text(text)
     assert res1["hashes"]["sha256"]["hash"] == res2["hashes"]["sha256"]["hash"]

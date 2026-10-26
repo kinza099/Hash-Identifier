@@ -22,7 +22,7 @@ A professional, privacy-first cybersecurity utility and cryptographic analysis t
   - [5. Duplicate Hash Detection](#5-duplicate-hash-detection)
   - [6. Hash List Diff Analyzer](#6-hash-list-diff-analyzer)
   - [7. Hash Manifest Generator & Verifier](#7-hash-manifest-generator--verifier)
-  - [8. Local Reference Database](#8-local-reference-database)
+  - [8. Backend Reference Database API](#8-backend-reference-database-api)
   - [9. Hash Performance Benchmark](#9-hash-performance-benchmark)
   - [10. Professional Cyber GUI with Google Material Symbols](#10-professional-cyber-gui-with-google-material-symbols)
 - [Supported Cryptographic and Structural Formats](#supported-cryptographic-and-structural-formats)
@@ -59,7 +59,7 @@ In cybersecurity operations, reverse engineering, and digital forensics, quickly
 | **5. Duplicate Hash Detection** | Identifies repeated hash strings, counts frequencies, tracks line indexes, and generates sanitized unique or duplicate-only lists. | Client / REST API |
 | **6. Hash List Diff Analyzer** | Compares baseline (List A) against target (List B) to isolate common hashes, newly introduced entries, removed entries, and internal duplicates. | Client / REST API |
 | **7. Hash Manifest Generator & Verifier** | Generates SHA-256 manifest records for directories or filesets. Verifies integrity by categorizing files into Unchanged, Modified, Missing, and Newly Added. | Local Browser / REST API |
-| **8. Local Reference Database** | Pre-seeded SQLite catalog with RFC 1321 test vectors, EICAR signatures, and provenance tracking. Supports custom record addition and JSON/CSV import/export. | Local SQLite / REST API |
+| **8. Backend Reference Database API** | Pre-seeded SQLite catalog with RFC 1321 test vectors, EICAR signatures, and provenance tracking. Supports custom record addition, exact lookup, and JSON/CSV import/export via REST API. | Local SQLite / REST API |
 | **9. Hash Performance Benchmark** | Executes controlled micro-benchmarks with selectable payload sizes (64KB to 16MB) and iterations. Measures execution time and throughput (MB/s). | Client & Server Engines |
 | **10. Professional Cyber GUI** | Modern cyber-styled responsive interface with dark/light themes, custom CSS tokens, and vector-rendered Google Material Symbols. | Browser / Responsive UI |
 
@@ -119,9 +119,10 @@ In cybersecurity operations, reverse engineering, and digital forensics, quickly
   - Newly Added: File present in local directory but not cataloged in manifest.
 - **Audit Export:** Download complete verification audit reports for compliance documentation.
 
-### 8. Local Reference Database
+### 8. Backend Reference Database API
 - **Zero-Configuration SQLite Storage:** Embedded database (`hash_lookup.db`) initialized automatically on startup.
 - **Pre-Seeded Cryptographic Vectors:** Contains standard RFC test vectors (RFC 1321 MD5 empty string, SHA family baselines), EICAR antivirus test signatures, and common baseline hashes.
+- **REST Endpoints:** Search (`GET /api/db/search?hash=...`), create records (`POST /api/db/records`), export (`GET /api/db/export`), and import (`POST /api/db/import`) without cluttering the main UI.
 - **Provenance & Metadata:** Records store algorithm name, source origin, classification tags, and contextual security notes.
 - **Database Management:** Search exact hash signatures, insert new verified records, delete obsolete entries, and bulk import/export via CSV or JSON.
 
@@ -329,12 +330,12 @@ Hash-Identifier/
    - Newly Added (found in folder but unlisted in manifest)
 5. Export the verification report to CSV or JSON.
 
-### 8. Local Reference Database Management
-1. Switch to the **Database** tab.
-2. Enter a hash into the search box to query the local SQLite catalog.
-3. View exact-match results including algorithm, source provenance, tags, and notes.
-4. Add new verified records by providing the hash, algorithm name, source origin, and optional notes.
-5. Export the database catalog as CSV or JSON, or import external datasets into the local store.
+### 8. Backend Reference Database Operations (REST API)
+1. Query known hash records via `GET /api/db/search?hash=<hash_string>`.
+2. View exact-match results including algorithm, source provenance, tags, and notes.
+3. Add new verified records by sending `POST /api/db/records` with JSON `{hash, algorithm, source, notes, tags}`.
+4. Export the database catalog as CSV or JSON via `GET /api/db/export?format=json|csv`.
+5. Import external datasets via `POST /api/db/import`.
 
 ### 9. Hash Performance Benchmarking
 1. Open the **Benchmark** tab.

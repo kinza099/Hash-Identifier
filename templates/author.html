@@ -1,27 +1,106 @@
 {% extends "base.html" %}
-{% block title %}Authors{% endblock %}
+{% block title %}Engineering &amp; Security Research Team{% endblock %}
 
 {% block content %}
 <section class="author-page">
-    <div class="hero" style="text-align: center; margin-bottom: 2rem;">
-        <h1 style="display: flex; align-items: center; justify-content: center; gap: 0.6rem;">
-            <span class="material-symbols-outlined" style="font-size: 2.2rem; color: var(--accent);">engineering</span>
-            Project Authors &amp; Security Engineers
+    <!-- HERO SECTION -->
+    <div class="author-hero">
+        <div class="hero-engineering-badge">
+            <span class="material-symbols-outlined">shield</span>
+            Core Security Engineering &amp; Research Team
+        </div>
+        <h1 class="author-hero-title">
+            <span class="material-symbols-outlined title-icon">engineering</span>
+            Engineering &amp; Security Research Team
         </h1>
-        <p class="subtitle">
-            Core creators and cybersecurity engineers behind the Hash Identifier &amp; Advanced Analysis Toolkit.
+        <p class="author-hero-subtitle">
+            The cryptographic architects and reverse engineers behind the Hash Identifier &amp; Advanced Cryptographic Analysis Toolkit. Engineered for deep hash discovery, static forensics, and verified integrity analysis.
         </p>
+        <div class="hero-stats-strip">
+            <span class="hero-stat-chip">
+                <span class="material-symbols-outlined">fingerprint</span>
+                30+ Hashing Algorithms Verified
+            </span>
+            <span class="hero-stat-chip">
+                <span class="material-symbols-outlined">lock</span>
+                100% In-Browser Privacy
+            </span>
+            <span class="hero-stat-chip">
+                <span class="material-symbols-outlined">school</span>
+                MUET Cyber Security Engineering
+            </span>
+        </div>
     </div>
 
+    <!-- DUAL AUTHORS GRID -->
     <div class="authors-grid">
         <!-- AUTHOR 1: KINZA -->
         <div class="author-card" id="author-card-kinza">
-            <div class="avatar-wrapper">
-                <img class="avatar-img" src="https://github.com/kinza099.png" alt="Kinza Avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <span class="avatar-fallback" style="display: none;">K</span>
+            <div class="card-tier-badge">
+                <span class="material-symbols-outlined">verified_user</span>
+                Creator &amp; Lead Architect
             </div>
+
+            <div class="avatar-wrapper">
+                <div class="avatar author-avatar">
+                    <img class="avatar-img" src="https://github.com/kinza099.png" alt="Kinza Avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="avatar-fallback" style="display: none;">K</span>
+                    <div class="avatar-status-badge" title="Verified Security Researcher">
+                        <span class="material-symbols-outlined">verified</span>
+                        <span class="status-pulse-dot" title="Active"></span>
+                    </div>
+                </div>
+            </div>
+
             <h1>Kinza</h1>
             <p class="role">Creator &amp; Lead Security Developer | Security Researcher &amp; Software Engineer</p>
+
+            <div class="role-pills">
+                <span class="role-pill primary">
+                    <span class="material-symbols-outlined">terminal</span>
+                    Creator &amp; Lead Security Developer
+                </span>
+                <span class="role-pill secondary">
+                    <span class="material-symbols-outlined">shield</span>
+                    Security Researcher &amp; Software Engineer
+                </span>
+            </div>
+
+            <div class="institution-row">
+                <span class="material-symbols-outlined">school</span>
+                <span class="inst-name">Mehran University of Engineering and Technology (MUET)</span>
+                <span class="degree-chip">B.S. Cyber Security</span>
+            </div>
+
+            <div class="highlights-grid">
+                <div class="highlight-chip">
+                    <span class="material-symbols-outlined">architecture</span>
+                    <div class="chip-text">
+                        <span class="chip-label">Specialty</span>
+                        <span class="chip-val">Lead Architecture</span>
+                    </div>
+                </div>
+                <div class="highlight-chip">
+                    <span class="material-symbols-outlined">lock</span>
+                    <div class="chip-text">
+                        <span class="chip-label">Domain</span>
+                        <span class="chip-val">Python &amp; Cryptography</span>
+                    </div>
+                </div>
+                <div class="highlight-chip">
+                    <span class="material-symbols-outlined">security</span>
+                    <div class="chip-text">
+                        <span class="chip-label">System</span>
+                        <span class="chip-val">Web Defense Engine</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bio-container">
+                <p class="about-text">
+                    Final-year B.S. Cyber Security student at MUET. Lead security developer and researcher specializing in applied cryptography, threat-focused software engineering, and algorithmic hash analysis. Architected the core detection heuristics, multi-layer hash identification engine, and high-performance Web Crypto verification pipeline for the Hash Identifier &amp; Analysis Toolkit.
+                </p>
+            </div>
 
             <div class="author-details">
                 <div class="detail-row">
@@ -42,7 +121,7 @@
                 </div>
                 <div class="detail-row">
                     <span class="detail-label"><span class="material-symbols-outlined">school</span> Institution</span>
-                    <span class="detail-value">MUET (B.S. Cyber Security)</span>
+                    <span class="detail-value">Mehran University of Engineering and Technology (MUET) (B.S. Cyber Security)</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label"><span class="material-symbols-outlined">code</span> Core Focus</span>
@@ -50,19 +129,94 @@
                 </div>
             </div>
 
-            <p class="about-text">
-                Final-year B.S. Cyber Security student at MUET. Specialized in Python, security tools engineering, cryptography, and interactive web defense systems.
-            </p>
+            <div class="author-bio-tags">
+                <span class="bio-tag"><span class="material-symbols-outlined">code</span> Python</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">lock</span> Applied Cryptography</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">deployed_code</span> Flask</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">build</span> Security Tooling</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">bug_report</span> Reverse Engineering</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">security</span> Web Defense</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">school</span> MUET</span>
+            </div>
+
+            <div class="author-actions">
+                <a href="https://github.com/kinza099" target="_blank" rel="noopener" class="author-btn btn-primary">
+                    <span class="material-symbols-outlined">terminal</span> GitHub Profile (@kinza099)
+                    <span class="material-symbols-outlined action-arrow">open_in_new</span>
+                </a>
+                <a href="mailto:kinzapython@gmail.com" class="author-btn btn-secondary">
+                    <span class="material-symbols-outlined">mail</span> Contact Email
+                </a>
+            </div>
         </div>
 
         <!-- AUTHOR 2: SALMAN MALLAH -->
         <div class="author-card" id="author-card-salman-mallah">
-            <div class="avatar-wrapper">
-                <img class="avatar-img" src="https://github.com/salmanmallah.png" alt="Salman Mallah Avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <span class="avatar-fallback" style="display: none;">S</span>
+            <div class="card-tier-badge">
+                <span class="material-symbols-outlined">bug_report</span>
+                Co-Creator &amp; Malware Analyst
             </div>
+
+            <div class="avatar-wrapper">
+                <div class="avatar author-avatar">
+                    <img class="avatar-img" src="https://github.com/salmanmallah.png" alt="Salman Mallah Avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="avatar-fallback" style="display: none;">S</span>
+                    <div class="avatar-status-badge" title="Verified Malware Analyst">
+                        <span class="material-symbols-outlined">verified</span>
+                        <span class="status-pulse-dot" title="Active"></span>
+                    </div>
+                </div>
+            </div>
+
             <h1>Salman Mallah</h1>
-            <p class="role">Co-Creator &amp; Cyber Security Engineer &amp; Malware Analyst</p>
+            <p class="role">Co-Creator &amp; Cyber Security Engineer | Malware Analyst</p>
+
+            <div class="role-pills">
+                <span class="role-pill primary">
+                    <span class="material-symbols-outlined">security</span>
+                    Co-Creator &amp; Cyber Security Engineer
+                </span>
+                <span class="role-pill secondary">
+                    <span class="material-symbols-outlined">bug_report</span>
+                    Malware Analyst
+                </span>
+            </div>
+
+            <div class="institution-row">
+                <span class="material-symbols-outlined">school</span>
+                <span class="inst-name">Mehran University of Engineering and Technology (MUET)</span>
+                <span class="degree-chip">B.S. Cyber Security</span>
+            </div>
+
+            <div class="highlights-grid">
+                <div class="highlight-chip">
+                    <span class="material-symbols-outlined">biotech</span>
+                    <div class="chip-text">
+                        <span class="chip-label">Specialty</span>
+                        <span class="chip-val">Malware Forensics</span>
+                    </div>
+                </div>
+                <div class="highlight-chip">
+                    <span class="material-symbols-outlined">troubleshoot</span>
+                    <div class="chip-text">
+                        <span class="chip-label">Domain</span>
+                        <span class="chip-val">Static &amp; Dynamic Analysis</span>
+                    </div>
+                </div>
+                <div class="highlight-chip">
+                    <span class="material-symbols-outlined">memory</span>
+                    <div class="chip-text">
+                        <span class="chip-label">System</span>
+                        <span class="chip-val">PE Internals</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bio-container">
+                <p class="about-text">
+                    Final-year B.S. Cyber Security student at MUET. Focuses on static and dynamic binary analysis, binary reversing, Windows Portable Executable (PE) internals, threat intelligence triage, and detection engineering. Co-architected the cryptographic algorithm signature corpus, binary format verification heuristics, and threat-oriented identification heuristics.
+                </p>
+            </div>
 
             <div class="author-details">
                 <div class="detail-row">
@@ -78,12 +232,12 @@
                     <span class="detail-value"><a href="https://github.com/salmanmallah" target="_blank" rel="noopener">github.com/salmanmallah</a></span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label"><span class="material-symbols-outlined">mail</span> Profile</span>
+                    <span class="detail-label"><span class="material-symbols-outlined">terminal</span> Profile</span>
                     <span class="detail-value"><a href="https://github.com/salmanmallah" target="_blank" rel="noopener">@salmanmallah</a></span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label"><span class="material-symbols-outlined">school</span> Institution</span>
-                    <span class="detail-value">MUET (B.S. Cyber Security)</span>
+                    <span class="detail-value">Mehran University of Engineering and Technology (MUET) (B.S. Cyber Security)</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label"><span class="material-symbols-outlined">code</span> Core Focus</span>
@@ -91,21 +245,86 @@
                 </div>
             </div>
 
-            <p class="about-text">
-                Final-year B.S. Cyber Security student at MUET. Focuses on Static Malware Analysis, Reverse Engineering, PE Internals, Threat Detection, and Systems Security.
-            </p>
+            <div class="author-bio-tags">
+                <span class="bio-tag"><span class="material-symbols-outlined">bug_report</span> Malware Analysis</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">memory</span> Reverse Engineering</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">data_object</span> PE Internals</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">radar</span> Threat Intelligence</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">search</span> Binary Analysis</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">code</span> C/C++</span>
+                <span class="bio-tag"><span class="material-symbols-outlined">school</span> MUET</span>
+            </div>
+
+            <div class="author-actions">
+                <a href="https://github.com/salmanmallah" target="_blank" rel="noopener" class="author-btn btn-primary">
+                    <span class="material-symbols-outlined">terminal</span> GitHub Profile (@salmanmallah)
+                    <span class="material-symbols-outlined action-arrow">open_in_new</span>
+                </a>
+            </div>
         </div>
     </div>
+    <!-- PROJECT MISSION CARD -->
 
-    <!-- PROJECT MISSION SECTION (styled with distinct class so exactly 2 author-cards exist) -->
-    <div class="project-overview-panel" style="max-width: 960px; width: 100%; margin-top: 2rem; text-align: left; background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 2.2rem; box-shadow: var(--shadow);">
-        <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem; font-size: 1.25rem;">
-            <span class="material-symbols-outlined" style="color: var(--accent);">verified</span>
-            About Hash Identifier &amp; Analysis Toolkit
-        </h3>
-        <p class="about-text">
-            Engineered as an advanced cryptographic analysis and forensics suite, this toolkit equips cybersecurity analysts, penetration testers, and students to quickly identify hash algorithms, compute digests, verify file integrity, detect duplicates, and cross-reference records. Supporting over 30 hashing algorithms — including MD5, SHA-1, SHA-2, SHA-3, bcrypt, scrypt, Argon2, NTLM, and JWT — with 100% private in-browser computation and local database capabilities.
-        </p>
+    <!-- PROJECT ARCHITECTURE & MISSION SECTION -->
+    <div class="project-overview-panel">
+        <div class="panel-header">
+            <span class="panel-badge">
+                <span class="material-symbols-outlined">verified</span>
+                System Architecture &amp; Project Mission
+            </span>
+            <h2>
+                <span class="material-symbols-outlined">security</span>
+                Hash Identifier &amp; Advanced Cryptographic Analysis Toolkit
+            </h2>
+            <p class="panel-desc">
+                An enterprise-grade cryptographic forensics suite engineered for cybersecurity researchers, malware analysts, penetration testers, and academic investigators. Combines multi-algorithm identification heuristics, client-side streaming, and private cryptographic verification.
+            </p>
+        </div>
+
+        <div class="specs-grid">
+            <div class="spec-card">
+                <div class="spec-icon">
+                    <span class="material-symbols-outlined">fingerprint</span>
+                </div>
+                <h3>30+ Hashing Algorithms</h3>
+                <p>Comprehensive detection and calculation across MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA3 family (224, 256, 384, 512, SHAKE-128, SHAKE-256), Keccak, BLAKE2b, BLAKE2s, RIPEMD-160, Whirlpool, bcrypt, scrypt, Argon2id, PBKDF2, NTLM, LM, and JWT format inspection.</p>
+            </div>
+
+            <div class="spec-card">
+                <div class="spec-icon">
+                    <span class="material-symbols-outlined">bolt</span>
+                </div>
+                <h3>Client-Side Streaming Engine</h3>
+                <p>High-throughput chunked hashing pipeline utilizing modern HTML5 FileReader and Web Workers. Stream and compute cryptographic hashes for multi-gigabyte disk images and binary samples directly within browser memory with sub-second feedback and zero UI blocking.</p>
+            </div>
+
+            <div class="spec-card">
+                <div class="spec-icon">
+                    <span class="material-symbols-outlined">lock</span>
+                </div>
+                <h3>100% In-Browser Privacy</h3>
+                <p>Zero sensitive hash leakage. All cryptographic parsing, entropy analysis, and hashing routines occur strictly within the client sandbox. No file payloads, secret keys, or proprietary hashes are ever transmitted across external networks.</p>
+            </div>
+
+            <div class="spec-card">
+                <div class="spec-icon">
+                    <span class="material-symbols-outlined">verified</span>
+                </div>
+                <h3>RFC &amp; NIST Forensic Compliance</h3>
+                <p>Engineered to align with NIST FIPS 180-4, FIPS 202, RFC 1321, RFC 2104, RFC 2898, and RFC 7519 standards. Features precision regular expression scoring, collision vulnerability advisories, and forensic verification reports.</p>
+            </div>
+        </div>
+
+        <div class="academic-mission-card">
+            <div class="academic-icon">
+                <span class="material-symbols-outlined">school</span>
+            </div>
+            <div class="academic-text">
+                <h4>Mehran University of Engineering and Technology (MUET)</h4>
+                <p class="dept">Department of Cyber Security &bull; Jamshoro, Sindh</p>
+                <p class="desc">Developed as a state-of-the-art applied cybersecurity and cryptographic analysis capstone project. Designed to deliver an intuitive, defense-grade toolkit for academic labs, SOC operations, and digital forensics triage worldwide.</p>
+            </div>
+        </div>
     </div>
 </section>
 {% endblock %}

@@ -40,15 +40,20 @@
     }
 
     async function runBenchmark() {
-        startBtn.disabled = true;
-        startBtn.textContent = "Benchmarking...";
-        resultsCard.style.display = "none";
+        if (!sizeSelect || !iterSelect) return;
+        if (startBtn) {
+            startBtn.disabled = true;
+            startBtn.textContent = "Benchmarking...";
+        }
+        if (resultsCard) resultsCard.style.display = "none";
 
         const sizeBytes = parseInt(sizeSelect.value, 10);
         const iterations = parseInt(iterSelect.value, 10);
         const engineTarget = targetSelect ? targetSelect.value : "browser";
 
-        progressText.textContent = `Running benchmark (${sizeBytes < 1048576 ? sizeBytes / 1024 + ' KB' : (sizeBytes / 1048576).toFixed(1) + ' MB'}, ${iterations} iterations)...`;
+        if (progressText) {
+            progressText.textContent = `Running benchmark (${sizeBytes < 1048576 ? sizeBytes / 1024 + ' KB' : (sizeBytes / 1048576).toFixed(1) + ' MB'}, ${iterations} iterations)...`;
+        }
 
         if (engineTarget === "backend") {
             try {
@@ -63,9 +68,11 @@
             } catch (err) {
                 showToast("Backend benchmark failed.");
             } finally {
-                startBtn.disabled = false;
-                startBtn.textContent = "Start Benchmark";
-                progressText.textContent = "";
+                if (startBtn) {
+                    startBtn.disabled = false;
+                    startBtn.textContent = "Start Benchmark";
+                }
+                if (progressText) progressText.textContent = "";
             }
             return;
         }
@@ -96,7 +103,7 @@
                 const algResults = [];
 
                 for (const alg of ALGORITHMS) {
-                    progressText.textContent = `Testing ${alg.name}...`;
+                    if (progressText) progressText.textContent = `Testing ${alg.name}...`;
                     const times = [];
 
                     for (let iter = 0; iter < iterations; iter++) {
@@ -156,42 +163,50 @@
             } catch (err) {
                 showToast("Benchmark encountered error: " + err.message);
             } finally {
-                startBtn.disabled = false;
-                startBtn.textContent = "Start Benchmark";
-                progressText.textContent = "";
+                if (startBtn) {
+                    startBtn.disabled = false;
+                    startBtn.textContent = "Start Benchmark";
+                }
+                if (progressText) progressText.textContent = "";
             }
         }, 50);
     }
 
     function renderResults(data) {
-        resultsCard.style.display = "block";
+        if (!data || !data.results) return;
+        if (resultsCard) resultsCard.style.display = "block";
 
         // Environment info
         const env = data.environment || {};
-        envInfoEl.innerHTML = `
-            <strong>Environment:</strong> ${escapeHtml(data.engine || 'Host Runtime')} | 
-            Cores: <strong>${escapeHtml(env.cores || env.architecture || 'N/A')}</strong> | 
-            Payload Size: <strong>${data.size_label}</strong> | 
-            Iterations: <strong>${data.iterations}</strong>
-        `;
+        if (envInfoEl) {
+            envInfoEl.innerHTML = `
+                <strong>Environment:</strong> ${escapeHtml(data.engine || 'Host Runtime')} | 
+                Cores: <strong>${escapeHtml(env.cores || env.architecture || 'N/A')}</strong> | 
+                Payload Size: <strong>${data.size_label}</strong> | 
+                Iterations: <strong>${data.iterations}</strong>
+            `;
+        }
 
         // Render Table
-        resultsTableBody.innerHTML = data.results.map((r, idx) => `
-            <tr>
-                <td><strong>#${idx + 1}</strong></td>
-                <td><strong>${escapeHtml(r.algorithm)}</strong></td>
-                <td>${r.avg_time_ms} ms</td>
-                <td>${r.min_time_ms} ms</td>
-                <td>${r.max_time_ms} ms</td>
-                <td><strong class="bench-throughput">${r.throughput_mbs} MB/s</strong></td>
-            </tr>
-        `).join("");
+        if (resultsTableBody) {
+            resultsTableBody.innerHTML = data.results.map((r, idx) => `
+                <tr>
+                    <td><strong>#${idx + 1}</strong></td>
+                    <td><strong>${escapeHtml(r.algorithm)}</strong></td>
+                    <td>${r.avg_time_ms} ms</td>
+                    <td>${r.min_time_ms} ms</td>
+                    <td>${r.max_time_ms} ms</td>
+                    <td><strong class="bench-throughput">${r.throughput_mbs} MB/s</strong></td>
+                </tr>
+            `).join("");
+        }
 
         // Render Bar Chart
         renderChart(data.results);
     }
 
     function renderChart(results) {
+        if (!chartContainer || !results) return;
         const maxThroughput = Math.max(...results.map((r) => r.throughput_mbs), 1);
 
         chartContainer.innerHTML = results.map((r) => {
@@ -250,7 +265,7 @@
         return div.innerHTML;
     }
 
-    startBtn.addEventListener("click", runBenchmark);
-    exportCsvBtn.addEventListener("click", exportCsv);
-    exportJsonBtn.addEventListener("click", exportJson);
+    if (startBtn) startBtn.addEventListener("click", runBenchmark);
+    if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportCsv);
+    if (exportJsonBtn) exportJsonBtn.addEventListener("click", exportJson);
 })();

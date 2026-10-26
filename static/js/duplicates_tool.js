@@ -73,6 +73,7 @@
     }
 
     async function findDuplicates() {
+        if (!inputArea) return;
         const text = inputArea.value.trim();
         if (!text) {
             showToast("Please enter or upload a list of hashes.");
@@ -80,8 +81,10 @@
             return;
         }
 
-        scanBtn.disabled = true;
-        scanBtn.textContent = "Scanning...";
+        if (scanBtn) {
+            scanBtn.disabled = true;
+            scanBtn.textContent = "Scanning...";
+        }
 
         try {
             const isCaseSens = caseToggle ? caseToggle.checked : false;
@@ -94,21 +97,23 @@
             currentData = data;
             renderSummary(data);
             renderList();
-            summarySection.style.display = "flex";
-            resultsContainer.style.display = "block";
+            if (summarySection) summarySection.style.display = "flex";
+            if (resultsContainer) resultsContainer.style.display = "block";
         } catch (err) {
             showToast("Error processing duplicates.");
         } finally {
-            scanBtn.disabled = false;
-            scanBtn.textContent = "Find Duplicates";
+            if (scanBtn) {
+                scanBtn.disabled = false;
+                scanBtn.textContent = "Find Duplicates";
+            }
         }
     }
 
     function renderSummary(data) {
-        totalLinesEl.textContent = data.total_lines;
-        uniqueCountEl.textContent = data.unique_count;
-        dupGroupsEl.textContent = data.duplicate_groups_count;
-        repeatedTotalEl.textContent = data.repeated_occurrences_count;
+        if (totalLinesEl) totalLinesEl.textContent = data.total_lines;
+        if (uniqueCountEl) uniqueCountEl.textContent = data.unique_count;
+        if (dupGroupsEl) dupGroupsEl.textContent = data.duplicate_groups_count;
+        if (repeatedTotalEl) repeatedTotalEl.textContent = data.repeated_occurrences_count;
     }
 
     function renderList() {
@@ -220,19 +225,23 @@
         return div.innerHTML;
     }
 
-    scanBtn.addEventListener("click", findDuplicates);
-    clearBtn.addEventListener("click", () => {
-        inputArea.value = "";
-        currentData = null;
-        summarySection.style.display = "none";
-        resultsContainer.style.display = "none";
-        inputArea.focus();
-    });
+    if (scanBtn) scanBtn.addEventListener("click", findDuplicates);
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            if (inputArea) {
+                inputArea.value = "";
+                inputArea.focus();
+            }
+            currentData = null;
+            if (summarySection) summarySection.style.display = "none";
+            if (resultsContainer) resultsContainer.style.display = "none";
+        });
+    }
 
-    filterView.addEventListener("change", renderList);
-    searchInput.addEventListener("input", renderList);
+    if (filterView) filterView.addEventListener("change", renderList);
+    if (searchInput) searchInput.addEventListener("input", renderList);
     if (caseToggle) caseToggle.addEventListener("change", findDuplicates);
 
-    exportUniqueBtn.addEventListener("click", exportUnique);
-    exportDupsBtn.addEventListener("click", exportDuplicates);
+    if (exportUniqueBtn) exportUniqueBtn.addEventListener("click", exportUnique);
+    if (exportDupsBtn) exportDupsBtn.addEventListener("click", exportDuplicates);
 })();

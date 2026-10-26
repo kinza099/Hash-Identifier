@@ -105,27 +105,29 @@
         if (livePreviewEmptyState) livePreviewEmptyState.style.display = "none";
 
         // Display selected file details before hashing
-        selectedFileCard.style.display = "flex";
-        fileNameEl.textContent = file.name;
-        fileSizeEl.textContent = `${formatBytes(file.size)} (${file.size.toLocaleString()} bytes)`;
+        if (selectedFileCard) selectedFileCard.style.display = "flex";
+        if (fileNameEl) fileNameEl.textContent = file.name;
+        if (fileSizeEl) fileSizeEl.textContent = `${formatBytes(file.size)} (${file.size.toLocaleString()} bytes)`;
 
         // Reset progress and results
-        progressWrap.style.display = "none";
-        resultsCard.style.display = "none";
-        verifyResultBox.style.display = "none";
-        generateBtn.disabled = false;
-        generateBtn.textContent = "Generate Hash";
+        if (progressWrap) progressWrap.style.display = "none";
+        if (resultsCard) resultsCard.style.display = "none";
+        if (verifyResultBox) verifyResultBox.style.display = "none";
+        if (generateBtn) {
+            generateBtn.disabled = false;
+            generateBtn.textContent = "Generate Hash";
+        }
     }
 
     if (fileRemoveBtn) {
         fileRemoveBtn.addEventListener("click", () => {
             currentFile = null;
             calculatedResults = null;
-            fileInput.value = "";
-            selectedFileCard.style.display = "none";
-            progressWrap.style.display = "none";
-            resultsCard.style.display = "none";
-            verifyResultBox.style.display = "none";
+            if (fileInput) fileInput.value = "";
+            if (selectedFileCard) selectedFileCard.style.display = "none";
+            if (progressWrap) progressWrap.style.display = "none";
+            if (resultsCard) resultsCard.style.display = "none";
+            if (verifyResultBox) verifyResultBox.style.display = "none";
             if (livePreviewEmptyState) livePreviewEmptyState.style.display = "block";
         });
     }
@@ -136,10 +138,12 @@
             algButtons.forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
             selectedAlgorithm = btn.getAttribute("data-alg");
-            selectedAlgLabel.textContent = `Selected algorithm: ${ALG_NAMES[selectedAlgorithm] || selectedAlgorithm.toUpperCase()}`;
+            if (selectedAlgLabel) {
+                selectedAlgLabel.textContent = `Selected algorithm: ${ALG_NAMES[selectedAlgorithm] || selectedAlgorithm.toUpperCase()}`;
+            }
 
             // Re-verify if integrity hash was already entered
-            if (calculatedResults && refHashInput.value.trim()) {
+            if (calculatedResults && refHashInput && refHashInput.value.trim()) {
                 verifyIntegrity();
             }
         });
@@ -421,10 +425,10 @@
         return div.innerHTML;
     }
 
-    generateBtn.addEventListener("click", calculateFileHash);
-    verifyIntegrityBtn.addEventListener("click", verifyIntegrity);
-    refHashInput.addEventListener("input", verifyIntegrity);
+    if (generateBtn) generateBtn.addEventListener("click", calculateFileHash);
+    if (verifyIntegrityBtn) verifyIntegrityBtn.addEventListener("click", verifyIntegrity);
+    if (refHashInput) refHashInput.addEventListener("input", verifyIntegrity);
 
-    exportTxtBtn.addEventListener("click", exportReportTxt);
-    exportCsvBtn.addEventListener("click", exportReportCsv);
+    if (exportTxtBtn) exportTxtBtn.addEventListener("click", exportReportTxt);
+    if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportReportCsv);
 })();

@@ -60,14 +60,18 @@
                 if (tabTarget === panelId || tabTarget === cleanId) {
                     tab.classList.add("active");
                     // Scroll tab into view if horizontal scroll container exists
-                    tab.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+                    if (typeof tab.scrollIntoView === "function") {
+                        tab.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+                    }
                 } else {
                     tab.classList.remove("active");
                 }
             });
 
             // Update URL hash without jumping
-            history.replaceState(null, "", "#" + cleanId.replace(/^tab-/, ""));
+            if (window.history && window.history.replaceState) {
+                history.replaceState(null, "", "#" + cleanId.replace(/^tab-/, ""));
+            }
         }
     }
 
@@ -80,11 +84,14 @@
         });
     });
 
-    // Check URL hash on page load (e.g. #file-hasher, #batch, etc.)
+    // Check URL hash immediately and on page load (e.g. #file-hasher, #batch, etc.)
+    if (window.location && window.location.hash) {
+        switchToolkitTab(window.location.hash.slice(1));
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
-        const hash = window.location.hash;
-        if (hash) {
-            switchToolkitTab(hash.slice(1));
+        if (window.location && window.location.hash) {
+            switchToolkitTab(window.location.hash.slice(1));
         }
     });
 
