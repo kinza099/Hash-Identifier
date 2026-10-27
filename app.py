@@ -420,5 +420,11 @@ def api_benchmark():
     return jsonify(res)
 
 
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """Custom branded 404 error page."""
+    return render_template("404.html", authors=AUTHORS, author=AUTHOR_INFO), 404
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

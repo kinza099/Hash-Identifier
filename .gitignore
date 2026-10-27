@@ -8,3 +8,6 @@ hash_lookup.db
 .idea/
 venv/
 env/
+
+ui_screenshots/
+capture_15_states.py

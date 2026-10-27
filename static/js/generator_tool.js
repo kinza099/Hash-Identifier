@@ -144,14 +144,18 @@
                 const digest = btn.getAttribute("data-hash");
                 const algName = btn.getAttribute("data-alg");
                 if (digest) {
-                    await navigator.clipboard.writeText(digest);
+                    const copyFn = window.copyToClipboard || (async (t) => { if (navigator.clipboard) await navigator.clipboard.writeText(t); });
+                    const ok = await copyFn(digest);
                     showToast(`${algName} hash copied to clipboard`);
+                    const origHtml = btn.innerHTML;
+                    btn.innerHTML = '<span class="material-symbols-outlined">check</span> Copied';
+                    setTimeout(() => { btn.innerHTML = origHtml; }, 1800);
                 }
             });
         });
     }
 
-    function copyAll() {
+    async function copyAll() {
         if (!currentHashes || Object.keys(currentHashes).length === 0) return;
 
         const lines = ALGORITHMS.map((alg) => `${alg.name.padEnd(8)}: ${currentHashes[alg.id] || ""}`);
@@ -163,9 +167,28 @@
             ...lines,
         ].join("\n");
 
-        navigator.clipboard.writeText(fullReport).then(() => {
-            showToast("All 5 algorithm hashes copied to clipboard!");
+        const copyFn = window.copyToClipboard || (async (t) => {
+            if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
         });
+
+        try {
+            await copyFn(fullReport);
+            showToast("All 5 algorithm hashes copied to clipboard!");
+            if (copyAllBtn) {
+                const origHtml = copyAllBtn.innerHTML;
+                copyAllBtn.innerHTML = '<span class="material-symbols-outlined">check</span> Copied All Hashes!';
+                copyAllBtn.style.borderColor = "var(--success)";
+                copyAllBtn.style.color = "var(--success)";
+                setTimeout(() => {
+                    copyAllBtn.innerHTML = origHtml;
+                    copyAllBtn.style.borderColor = "";
+                    copyAllBtn.style.color = "";
+                }, 2000);
+            }
+        } catch (err) {
+            console.error("copyAll failed:", err);
+            showToast("Failed to copy. Please select text manually.");
+        }
     }
 
     function escapeHtml(str) {

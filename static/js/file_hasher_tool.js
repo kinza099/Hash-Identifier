@@ -233,7 +233,7 @@
             btn.addEventListener("click", async () => {
                 const digest = btn.getAttribute("data-hash");
                 const name = btn.getAttribute("data-alg");
-                await navigator.clipboard.writeText(digest);
+                await (window.copyToClipboard ? window.copyToClipboard(digest) : navigator.clipboard.writeText(digest));
                 showToast(`${name} hash copied to clipboard!`);
             });
         });

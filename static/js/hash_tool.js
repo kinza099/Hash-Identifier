@@ -209,11 +209,10 @@
                     h.matches && h.matches.length
                         ? h.matches[0].types.join(", ") + (h.matches.length > 1 ? " +" + (h.matches.length - 1) : "")
                         : "No match";
-                const short = h.input.length > 28 ? h.input.slice(0, 28) + "…" : h.input;
-                return `<div class="history-item" data-value="${escapeHtml(h.input)}" title="Click to reload this lookup">
-                            <span class="history-hash">${escapeHtml(short)}</span>
+                return `<div class="history-item" role="button" tabindex="0" data-value="${escapeHtml(h.input)}" title="Click to reload this lookup">
+                            <span class="history-hash">${escapeHtml(h.input)}</span>
                             <span class="history-types">${escapeHtml(typeLabel)}</span>
-                            <button class="history-copy-btn" data-value="${escapeHtml(h.input)}" title="Copy full hash"><span class="material-symbols-outlined">content_copy</span></button>
+                            <button class="history-copy-btn" data-value="${escapeHtml(h.input)}" title="Copy full hash" aria-label="Copy full hash"><span class="material-symbols-outlined">content_copy</span></button>
                         </div>`;
             })
             .join("");
@@ -224,6 +223,12 @@
                 input.value = el.getAttribute("data-value");
                 identify();
             });
+            el.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    el.click();
+                }
+            });
         });
 
         historyList.querySelectorAll(".history-copy-btn").forEach((el) => {
@@ -231,7 +236,7 @@
                 e.stopPropagation();
                 const value = el.getAttribute("data-value");
                 try {
-                    await navigator.clipboard.writeText(value);
+                    await (window.copyToClipboard ? window.copyToClipboard(value) : navigator.clipboard.writeText(value));
                     showToast("Hash copied to clipboard");
                 } catch (err) {
                     showToast("Could not copy automatically — select manually");

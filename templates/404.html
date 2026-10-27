@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}404 - Page Not Found{% endblock %}
+
+{% block content %}
+<div class="error-container" style="text-align:center; padding:5rem 1.5rem; max-width:640px; margin:0 auto;">
+    <div style="font-size:4.5rem; color:var(--accent); margin-bottom:1.2rem; display:inline-flex; align-items:center; justify-content:center; width:96px; height:96px; border-radius:50%; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.25);">
+        <span class="material-symbols-outlined" style="font-size:3.5rem;">error_outline</span>
+    </div>
+    <h1 style="font-size:2.4rem; font-weight:800; margin-bottom:0.75rem; letter-spacing:-0.02em;">404 - Page Not Found</h1>
+    <p style="color:var(--text-muted); font-size:1.05rem; margin-bottom:2.2rem; line-height:1.6;">
+        The requested endpoint or resource does not exist in the Hash Identifier toolkit. It may have moved or been typed incorrectly.
+    </p>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+        <a href="{{ url_for('index') }}" class="btn-primary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; padding:0.75rem 1.6rem; border-radius:10px; font-weight:600;">
+            <span class="material-symbols-outlined" style="font-size:1.15rem;">home</span> Return to Toolkit
+        </a>
+        <a href="{{ url_for('author') }}" class="btn-secondary" style="display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; padding:0.75rem 1.6rem; border-radius:10px; font-weight:600;">
+            <span class="material-symbols-outlined" style="font-size:1.15rem;">group</span> View Authors
+        </a>
+    </div>
+</div>
+{% endblock %}

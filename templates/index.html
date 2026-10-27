@@ -104,8 +104,8 @@
                 <button id="batch-clear-btn" class="btn-secondary">Clear</button>
             </div>
             <div style="display:flex; gap:0.6rem;">
-                <button id="batch-export-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export CSV</button>
-                <button id="batch-export-json" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export JSON</button>
+                <button id="batch-export-csv" class="btn-outline btn-sm" disabled><span class="material-symbols-outlined">download</span> Export CSV</button>
+                <button id="batch-export-json" class="btn-outline btn-sm" disabled><span class="material-symbols-outlined">download</span> Export JSON</button>
             </div>
         </div>
     </section>
@@ -296,7 +296,8 @@
 
         <div id="dup-dropzone" class="dropzone" style="margin-top:1rem;">
             <div class="dropzone-icon"><span class="material-symbols-outlined">description</span></div>
-            <div class="dropzone-text">Drop TXT or CSV file here</div>
+            <div class="dropzone-text">Drop TXT or CSV file here, or click to browse</div>
+            <div class="dropzone-sub">Supports line-delimited hash lists. Analyzed 100% locally in-browser.</div>
             <input type="file" id="dup-file-input" accept=".txt,.csv" style="display:none;">
         </div>
 
@@ -309,8 +310,8 @@
                 </label>
             </div>
             <div style="display:flex; gap:0.6rem;">
-                <button id="dup-export-unique" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export Unique</button>
-                <button id="dup-export-dups" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export Duplicates</button>
+                <button id="dup-export-unique" class="btn-outline btn-sm" disabled><span class="material-symbols-outlined">download</span> Export Unique</button>
+                <button id="dup-export-dups" class="btn-outline btn-sm" disabled><span class="material-symbols-outlined">download</span> Export Duplicates</button>
             </div>
         </div>
     </section>
@@ -379,8 +380,8 @@
                 </label>
             </div>
             <div style="display:flex; gap:0.6rem;">
-                <button id="diff-export-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export Diff CSV</button>
-                <button id="diff-export-json" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export Diff JSON</button>
+                <button id="diff-export-csv" class="btn-outline btn-sm" disabled><span class="material-symbols-outlined">download</span> Export Diff CSV</button>
+                <button id="diff-export-json" class="btn-outline btn-sm" disabled><span class="material-symbols-outlined">download</span> Export Diff JSON</button>
             </div>
         </div>
     </section>
@@ -587,11 +588,18 @@
                 <span id="bench-progress-text" style="font-size:0.86rem; color:var(--text-muted);"></span>
             </div>
             <div style="display:flex; gap:0.6rem;">
-                <button id="bench-export-csv" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export CSV</button>
-                <button id="bench-export-json" class="btn-outline btn-sm"><span class="material-symbols-outlined">download</span> Export JSON</button>
+                <button id="bench-export-csv" class="btn-outline btn-sm" disabled><span class="material-symbols-outlined">download</span> Export CSV</button>
+                <button id="bench-export-json" class="btn-outline btn-sm" disabled><span class="material-symbols-outlined">download</span> Export JSON</button>
             </div>
         </div>
     </section>
+
+    
+    <div id="bench-empty-placeholder" class="panel-card" style="text-align: center; padding: 2.5rem 1.5rem; color: var(--text-muted); border: 1px dashed var(--border-light); margin-top: 1.5rem;">
+        <span class="material-symbols-outlined" style="font-size: 2.8rem; color: var(--text-muted); margin-bottom: 0.5rem; opacity: 0.7;">speed</span>
+        <p style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.25rem;">No Benchmark Executed Yet</p>
+        <p style="font-size: 0.84rem; color: var(--text-muted);">Select payload size and iterations above, then click <strong>Start Benchmark</strong> to measure real throughput across algorithms.</p>
+    </div>
 
     <section id="bench-results-card" class="panel-card" style="display:none;">
         <div class="toolbar-row">
@@ -632,7 +640,7 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/hash_tool.js') }}"></script>
 <script src="{{ url_for('static', filename='js/batch_tool.js') }}"></script>
-<script src="{{ url_for('static', filename='js/generator_tool.js') }}"></script>
+<script src="{{ url_for('static', filename='js/generator_tool.js') }}?v=2.4"></script>
 <script src="{{ url_for('static', filename='js/file_hasher_tool.js') }}"></script>
 <script src="{{ url_for('static', filename='js/duplicates_tool.js') }}"></script>
 <script src="{{ url_for('static', filename='js/diff_tool.js') }}"></script>

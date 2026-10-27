@@ -204,7 +204,7 @@
             btn.addEventListener("click", async () => {
                 const val = btn.getAttribute("data-value");
                 if (val) {
-                    await navigator.clipboard.writeText(val);
+                    await (window.copyToClipboard ? window.copyToClipboard(val) : navigator.clipboard.writeText(val));
                     showToast("Hash copied to clipboard");
                 }
             });

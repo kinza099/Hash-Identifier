@@ -7,7 +7,11 @@
     const icon = document.getElementById("theme-icon");
 
     // 1. Theme Management (persisted in localStorage and memory)
-    let currentTheme = localStorage.getItem("hash_toolkit_theme") || root.getAttribute("data-theme") || "dark";
+    const urlParams = new URLSearchParams(window.location.search);
+    const themeParam = urlParams.get("theme");
+    let currentTheme = (themeParam === "light" || themeParam === "dark")
+        ? themeParam
+        : (localStorage.getItem("hash_toolkit_theme") || root.getAttribute("data-theme") || "dark");
 
     function applyTheme(theme) {
         root.setAttribute("data-theme", theme);
@@ -89,11 +93,27 @@
         switchToolkitTab(window.location.hash.slice(1));
     }
 
-    window.addEventListener("DOMContentLoaded", () => {
-        if (window.location && window.location.hash) {
+    function initToolkitState() {
+        if (urlParams.get("tab")) {
+            switchToolkitTab(urlParams.get("tab"));
+        } else if (window.location && window.location.hash) {
             switchToolkitTab(window.location.hash.slice(1));
         }
-    });
+        const hashQuery = urlParams.get("hash");
+        if (hashQuery) {
+            setTimeout(() => {
+                if (typeof window.inspectSingleHash === "function") {
+                    window.inspectSingleHash(hashQuery);
+                }
+            }, 300);
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initToolkitState);
+    } else {
+        initToolkitState();
+    }
 
     // Handle browser back/forward buttons
     window.addEventListener("hashchange", () => {
@@ -102,4 +122,53 @@
             switchToolkitTab(hash.slice(1));
         }
     });
+
+    // Universal Clipboard Copy Helper (works in secure HTTPS, localhost, AND non-secure HTTP LAN IP contexts)
+    async function copyToClipboard(text) {
+        if (text == null) return false;
+        text = String(text);
+
+        // 1. Try modern async Clipboard API if available in secure context
+        if (window.isSecureContext && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (err) {
+                console.warn("navigator.clipboard.writeText failed, falling back to execCommand:", err);
+            }
+        }
+
+        // 2. Fallback: document.execCommand('copy') via temporary textarea (universal HTTP/LAN support)
+        try {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.top = "0";
+            textarea.style.left = "0";
+            textarea.style.width = "2em";
+            textarea.style.height = "2em";
+            textarea.style.padding = "0";
+            textarea.style.border = "none";
+            textarea.style.outline = "none";
+            textarea.style.boxShadow = "none";
+            textarea.style.background = "transparent";
+            textarea.style.opacity = "0.01";
+            textarea.style.zIndex = "-1";
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            if (typeof textarea.setSelectionRange === "function") {
+                textarea.setSelectionRange(0, textarea.value.length);
+            }
+            const successful = document.execCommand("copy");
+            document.body.removeChild(textarea);
+            return !!successful;
+        } catch (err) {
+            console.error("document.execCommand fallback failed:", err);
+            return false;
+        }
+    }
+
+    window.copyToClipboard = copyToClipboard;
+
 })();
