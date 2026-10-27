@@ -4,7 +4,8 @@ Provides local storage and exact-match searching for reference hashes using SQLi
 - Stores hash, algorithm, source/provenance, notes, tag, created_at
 - Exact normalized match search
 - Add, update, delete operations
-- Import and export to CSV and JSON
+- High-performance bulk import via single-transaction executemany()
+- Streaming export to CSV and JSON
 - Pre-populated with baseline test & reference vectors
 """
 
@@ -63,20 +64,28 @@ SAMPLE_RECORDS = [
     },
 ]
 
+_INITIALIZED_DBS: set = set()
+
 
 def get_db_connection(db_path: Optional[str] = None) -> sqlite3.Connection:
-    """Create and configure a SQLite connection."""
-    target_path = db_path or DB_FILE
+    """Create and configure a SQLite connection with WAL mode and normalized row access."""
+    target_path = os.path.abspath(db_path or DB_FILE)
     conn = sqlite3.connect(target_path)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_db(db_path: Optional[str] = None) -> None:
-    """Initialize database tables and seed sample records if empty."""
-    conn = get_db_connection(db_path)
+    """Initialize database tables, indexes, and seed sample records once per database path."""
+    target_path = os.path.abspath(db_path or DB_FILE)
+    if target_path in _INITIALIZED_DBS:
+        return
+
+    conn = get_db_connection(target_path)
     try:
         with conn:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA synchronous=NORMAL;")
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS reference_hashes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,6 +113,8 @@ def init_db(db_path: Optional[str] = None) -> None:
                         INSERT INTO reference_hashes (hash, normalized_hash, algorithm, source, notes, tag, created_at)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     """, (rec["hash"], norm, rec["algorithm"], rec["source"], rec["notes"], rec["tag"], now))
+
+        _INITIALIZED_DBS.add(target_path)
     finally:
         conn.close()
 
@@ -158,17 +169,20 @@ def add_record(
     init_db(db_path)
     clean_hash = hash_val.strip()
     norm = clean_hash.lower()
-    if not clean_hash:
-        raise ValueError("Hash value cannot be empty.")
+    clean_alg = algorithm.strip() or "Unknown"
+    clean_source = source.strip() or "Local Entry"
+    created_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
-    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     conn = get_db_connection(db_path)
     try:
         with conn:
-            cur = conn.execute("""
+            cur = conn.execute(
+                """
                 INSERT INTO reference_hashes (hash, normalized_hash, algorithm, source, notes, tag, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (clean_hash, norm, algorithm.strip() or "Unknown", source.strip() or "User Entry", notes.strip(), tag.strip(), now))
+                VALUES (?, ?, ?, ?, ?, ?, ?);
+                """,
+                (clean_hash, norm, clean_alg, clean_source, notes, tag, created_at),
+            )
             rec_id = cur.lastrowid
     finally:
         conn.close()
@@ -176,16 +190,17 @@ def add_record(
     return {
         "id": rec_id,
         "hash": clean_hash,
-        "algorithm": algorithm,
-        "source": source,
+        "normalized_hash": norm,
+        "algorithm": clean_alg,
+        "source": clean_source,
         "notes": notes,
         "tag": tag,
-        "created_at": now,
+        "created_at": created_at,
     }
 
 
 def delete_record(record_id: int, db_path: Optional[str] = None) -> bool:
-    """Delete a record by ID."""
+    """Delete a reference record by ID."""
     init_db(db_path)
     conn = get_db_connection(db_path)
     try:
@@ -210,96 +225,146 @@ def list_records(limit: int = 100, db_path: Optional[str] = None) -> List[Dict[s
         conn.close()
 
 
-def export_records_json(db_path: Optional[str] = None) -> str:
-    """Export all reference records as a JSON string."""
-    records = list_records(limit=10000, db_path=db_path)
-    return json.dumps(records, indent=2)
+def export_records_json(limit: Optional[int] = None, db_path: Optional[str] = None) -> str:
+    """Export all reference records as a JSON string using streaming cursor."""
+    init_db(db_path)
+    conn = get_db_connection(db_path)
+    try:
+        query = "SELECT id, hash, algorithm, source, notes, tag, created_at FROM reference_hashes ORDER BY id DESC"
+        params: Tuple[Any, ...] = ()
+        if limit is not None:
+            query += " LIMIT ?"
+            params = (limit,)
+        cur = conn.execute(query, params)
+        records = [dict(r) for r in cur]
+        return json.dumps(records, indent=2)
+    finally:
+        conn.close()
 
 
-def export_records_csv(db_path: Optional[str] = None) -> str:
-    """Export all reference records as CSV."""
-    records = list_records(limit=10000, db_path=db_path)
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["id", "hash", "algorithm", "source", "notes", "tag", "created_at"])
-    for r in records:
-        writer.writerow([r["id"], r["hash"], r["algorithm"], r["source"], r["notes"], r["tag"], r["created_at"]])
-    return output.getvalue()
+def export_records_csv(limit: Optional[int] = None, db_path: Optional[str] = None) -> str:
+    """Export all reference records as CSV using incremental row writing."""
+    init_db(db_path)
+    conn = get_db_connection(db_path)
+    try:
+        query = "SELECT id, hash, algorithm, source, notes, tag, created_at FROM reference_hashes ORDER BY id DESC"
+        params: Tuple[Any, ...] = ()
+        if limit is not None:
+            query += " LIMIT ?"
+            params = (limit,)
+        cur = conn.execute(query, params)
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["id", "hash", "algorithm", "source", "notes", "tag", "created_at"])
+        for r in cur:
+            writer.writerow([r["id"], r["hash"], r["algorithm"], r["source"], r["notes"], r["tag"], r["created_at"]])
+        return output.getvalue()
+    finally:
+        conn.close()
 
 
 def import_records(data_text: str, db_path: Optional[str] = None) -> Dict[str, Any]:
-    """Import reference records from JSON or CSV text."""
+    """Import reference records from JSON or CSV text in a single bulk transaction."""
     init_db(db_path)
     stripped = data_text.strip()
     if not stripped:
         return {"imported": 0, "errors": ["Input was empty."]}
 
-    imported_count = 0
-    errors = []
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    records_to_insert: List[Tuple[str, str, str, str, str, str, str]] = []
+    errors: List[str] = []
 
-    # Try JSON
+    # Try JSON format
     if stripped.startswith("["):
         try:
             records = json.loads(stripped)
             for r in records:
-                try:
-                    add_record(
-                        hash_val=r.get("hash", ""),
-                        algorithm=r.get("algorithm", "Unknown"),
-                        source=r.get("source", "Imported JSON"),
-                        notes=r.get("notes", ""),
-                        tag=r.get("tag", "Imported"),
-                        db_path=db_path,
-                    )
-                    imported_count += 1
-                except Exception as ex:
-                    errors.append(str(ex))
-            return {"imported": imported_count, "errors": errors}
-        except Exception:
-            pass
-
-    # Try CSV
-    reader = csv.reader(io.StringIO(stripped))
-    rows = list(reader)
-    if not rows:
-        return {"imported": 0, "errors": ["No rows found in CSV."]}
-
-    header = [c.strip().lower() for c in rows[0]]
-    h_idx = 0
-    alg_idx = 1 if len(rows[0]) > 1 else -1
-    src_idx = 2 if len(rows[0]) > 2 else -1
-    notes_idx = 3 if len(rows[0]) > 3 else -1
-    tag_idx = 4 if len(rows[0]) > 4 else -1
-
-    for i, col in enumerate(header):
-        if "hash" in col:
-            h_idx = i
-        elif "algorithm" in col or "type" in col:
-            alg_idx = i
-        elif "source" in col or "provenance" in col:
-            src_idx = i
-        elif "note" in col or "desc" in col:
-            notes_idx = i
-        elif "tag" in col:
-            tag_idx = i
-
-    start_row = 1 if any(c in header[0] for c in ["hash", "id", "digest"]) else 0
-
-    for r in rows[start_row:]:
-        if not r or len(r) <= h_idx:
-            continue
-        h_val = r[h_idx].strip()
-        if not h_val:
-            continue
-        alg = r[alg_idx].strip() if alg_idx != -1 and alg_idx < len(r) else "Unknown"
-        src = r[src_idx].strip() if src_idx != -1 and src_idx < len(r) else "Imported CSV"
-        notes = r[notes_idx].strip() if notes_idx != -1 and notes_idx < len(r) else ""
-        tag = r[tag_idx].strip() if tag_idx != -1 and tag_idx < len(r) else "Imported"
-
-        try:
-            add_record(h_val, alg, src, notes, tag, db_path=db_path)
-            imported_count += 1
+                if not isinstance(r, dict):
+                    continue
+                h_val = str(r.get("hash", "")).strip()
+                if not h_val:
+                    continue
+                alg = str(r.get("algorithm", "Unknown")).strip() or "Unknown"
+                src = str(r.get("source", "Imported JSON")).strip() or "Imported JSON"
+                notes = str(r.get("notes", "")).strip()
+                tag = str(r.get("tag", "Imported")).strip() or "Imported"
+                norm = h_val.lower()
+                records_to_insert.append((h_val, norm, alg, src, notes, tag, now))
         except Exception as ex:
-            errors.append(str(ex))
+            errors.append(f"JSON Parse Error: {ex}")
 
-    return {"imported": imported_count, "errors": errors}
+    # If not JSON or JSON parsing produced no records, try CSV format
+    if not records_to_insert:
+        try:
+            reader = csv.reader(io.StringIO(stripped))
+            try:
+                first_row = next(reader)
+            except StopIteration:
+                return {"imported": 0, "errors": ["No rows found in CSV."]}
+
+            header = [c.strip().lower() for c in first_row]
+            h_idx = 0
+            alg_idx = 1 if len(first_row) > 1 else -1
+            src_idx = 2 if len(first_row) > 2 else -1
+            notes_idx = 3 if len(first_row) > 3 else -1
+            tag_idx = 4 if len(first_row) > 4 else -1
+
+            is_header = False
+            for i, col in enumerate(header):
+                if "hash" in col:
+                    h_idx = i
+                    is_header = True
+                elif "algorithm" in col or "type" in col:
+                    alg_idx = i
+                elif "source" in col or "provenance" in col:
+                    src_idx = i
+                elif "note" in col or "desc" in col:
+                    notes_idx = i
+                elif "tag" in col:
+                    tag_idx = i
+
+            if not is_header and any(c in header[0] for c in ["hash", "id", "digest"]):
+                is_header = True
+
+            def parse_csv_record(r: List[str]) -> Optional[Tuple[str, str, str, str, str, str, str]]:
+                if not r or len(r) <= h_idx:
+                    return None
+                h_val = r[h_idx].strip()
+                if not h_val:
+                    return None
+                alg = r[alg_idx].strip() if alg_idx != -1 and alg_idx < len(r) else "Unknown"
+                src = r[src_idx].strip() if src_idx != -1 and src_idx < len(r) else "Imported CSV"
+                notes = r[notes_idx].strip() if notes_idx != -1 and notes_idx < len(r) else ""
+                tag = r[tag_idx].strip() if tag_idx != -1 and tag_idx < len(r) else "Imported"
+                norm = h_val.lower()
+                return (h_val, norm, alg, src, notes, tag, now)
+
+            if not is_header:
+                rec = parse_csv_record(first_row)
+                if rec:
+                    records_to_insert.append(rec)
+
+            for r in reader:
+                rec = parse_csv_record(r)
+                if rec:
+                    records_to_insert.append(rec)
+        except Exception as ex:
+            errors.append(f"CSV Parse Error: {ex}")
+
+    if not records_to_insert:
+        return {"imported": 0, "errors": errors or ["No valid records found in input."]}
+
+    # Execute single batch transaction with executemany
+    conn = get_db_connection(db_path)
+    try:
+        with conn:
+            conn.executemany("""
+                INSERT INTO reference_hashes (hash, normalized_hash, algorithm, source, notes, tag, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?);
+            """, records_to_insert)
+        return {"imported": len(records_to_insert), "errors": errors}
+    except Exception as ex:
+        return {"imported": 0, "errors": [str(ex)]}
+    finally:
+        conn.close()

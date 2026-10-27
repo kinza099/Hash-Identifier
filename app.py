@@ -186,23 +186,27 @@ def api_identify():
 @app.route("/api/batch-identify", methods=["POST"])
 def api_batch_identify():
     """Analyze a batch of hashes from multiline text or CSV."""
+    compact = request.args.get("compact", "false").lower() == "true"
     if request.is_json:
         data = request.get_json(silent=True) or {}
         raw_text = data.get("text", "")
         is_csv = data.get("is_csv", False)
         csv_column = data.get("column", None)
+        compact = compact or data.get("compact", False)
     elif "file" in request.files:
         uploaded_file = request.files["file"]
         filename = uploaded_file.filename or ""
         is_csv = filename.lower().endswith(".csv")
         raw_text = uploaded_file.stream.read().decode("utf-8", errors="replace")
         csv_column = request.form.get("column", None)
+        compact = compact or (request.form.get("compact", "false").lower() == "true")
     else:
         raw_text = request.form.get("text", "")
         is_csv = request.form.get("is_csv", "false").lower() == "true"
         csv_column = request.form.get("column", None)
+        compact = compact or (request.form.get("compact", "false").lower() == "true")
 
-    results = process_batch(raw_text, is_csv=is_csv, csv_column=csv_column)
+    results = process_batch(raw_text, is_csv=is_csv, csv_column=csv_column, compact=compact)
     return jsonify(results)
 
 
@@ -412,10 +416,17 @@ def api_db_import():
 # ---------------------------------------------------------------------------
 @app.route("/api/benchmark", methods=["POST"])
 def api_benchmark():
-    """Execute hash performance benchmark on server."""
+    """Execute hash performance benchmark on server with bounded parameter limits."""
     data = request.get_json(silent=True) or {}
-    size_bytes = int(data.get("size_bytes", 1024 * 1024))
-    iterations = int(data.get("iterations", 5))
+    try:
+        size_bytes = int(data.get("size_bytes", 1024 * 1024))
+    except (ValueError, TypeError):
+        size_bytes = 1024 * 1024
+    try:
+        iterations = int(data.get("iterations", 5))
+    except (ValueError, TypeError):
+        iterations = 5
+
     res = run_benchmark(size_bytes=size_bytes, iterations=iterations)
     return jsonify(res)
 
@@ -425,6 +436,12 @@ def api_benchmark():
 def page_not_found(e):
     """Custom branded 404 error page."""
     return render_template("404.html", authors=AUTHORS, author=AUTHOR_INFO), 404
+
+# Pre-initialize local database schema at startup to avoid per-request overhead
+try:
+    init_db()
+except Exception as _db_err:
+    app.logger.warning("Startup database initialization: %s", _db_err)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

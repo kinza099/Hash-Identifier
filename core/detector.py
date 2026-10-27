@@ -8,6 +8,7 @@ Provides deep structural analysis of hash strings:
 - Ambiguity warnings and algorithmic match rationale
 """
 
+from collections import Counter
 import math
 import re
 from typing import Any, Dict, List, Optional, Tuple
@@ -442,24 +443,131 @@ DETECTION_RULES = [
 
 
 def calculate_entropy(s: str) -> float:
-    """Calculate Shannon entropy (bits per character) of a string."""
+    """Calculate Shannon entropy (bits per character) of a string in O(N) time via frequency mapping."""
     if not s:
         return 0.0
-    prob = [float(s.count(c)) / len(s) for c in set(s)]
-    return -sum(p * math.log2(p) for p in prob)
+    length = len(s)
+    counts = Counter(s)
+    return -sum((count / length) * math.log2(count / length) for count in counts.values())
 
+
+
+# ---------------------------------------------------------------------------
+# Precompiled Regular Expressions & Fast Rule Dispatch Structures
+# ---------------------------------------------------------------------------
+RE_HEX_LOWER = re.compile(r'^[0-9a-f]+$')
+RE_HEX_UPPER = re.compile(r'^[0-9A-F]+$')
+RE_HEX_ALL = re.compile(r'^[0-9a-fA-F]+$')
+RE_BASE64 = re.compile(r'^[A-Za-z0-9+/]+={0,2}$')
+RE_BASE64URL = re.compile(r'^[A-Za-z0-9_-]+$')
+RE_JWT = re.compile(r'^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$')
+
+
+class CompiledRule:
+    __slots__ = (
+        "regex", "pattern", "types", "note", "confidence",
+        "score", "rationale", "ambiguity", "rule_type", "expected_length"
+    )
+
+    def __init__(
+        self, pattern: str, types: List[str], note: str,
+        confidence: str, score: int, rationale: str, ambiguity: str,
+        rule_type: str = "general", expected_length: Optional[int] = None
+    ):
+        self.regex = re.compile(pattern)
+        self.pattern = pattern
+        self.types = types
+        self.note = note
+        self.confidence = confidence
+        self.score = score
+        self.rationale = rationale
+        self.ambiguity = ambiguity
+        self.rule_type = rule_type
+        self.expected_length = expected_length
+
+
+COMPILED_RULES: List[CompiledRule] = []
+RULES_HEX_BY_LEN: Dict[int, List[CompiledRule]] = {}
+RULES_BASE64_BY_LEN: Dict[int, List[CompiledRule]] = {}
+RULES_PREFIX_DOLLAR: List[CompiledRule] = []
+RULES_PREFIX_STAR: List[CompiledRule] = []
+RULES_PREFIX_BRACE: List[CompiledRule] = []
+RULE_JWT: Optional[CompiledRule] = None
+
+# Classify and precompile DETECTION_RULES at module load time
+for _pat, _types, _note, _conf, _score, _rat, _amb in DETECTION_RULES:
+    _rtype = "general"
+    _len: Optional[int] = None
+
+    if _pat.startswith(r"^\$"):
+        _rtype = "dollar"
+    elif _pat.startswith(r"^\*"):
+        _rtype = "star"
+    elif _pat.startswith(r"^\{"):
+        _rtype = "brace"
+    elif r"\." in _pat:
+        _rtype = "jwt"
+    elif _pat.startswith(r"^[a-fA-F0-9]{"):
+        _rtype = "hex"
+        m = re.search(r"\{(\d+)\}", _pat)
+        if m:
+            _len = int(m.group(1))
+    elif _pat.startswith(r"^[A-Za-z0-9+/]{"):
+        _rtype = "base64"
+        m = re.search(r"\{(\d+)\}", _pat)
+        if m:
+            # Add padding characters to length
+            pad_len = _pat.count("=")
+            _len = int(m.group(1)) + pad_len
+
+    c_rule = CompiledRule(_pat, _types, _note, _conf, _score, _rat, _amb, _rtype, _len)
+    COMPILED_RULES.append(c_rule)
+
+    if _rtype == "hex" and _len is not None:
+        RULES_HEX_BY_LEN.setdefault(_len, []).append(c_rule)
+    elif _rtype == "base64" and _len is not None:
+        RULES_BASE64_BY_LEN.setdefault(_len, []).append(c_rule)
+    elif _rtype == "dollar":
+        RULES_PREFIX_DOLLAR.append(c_rule)
+    elif _rtype == "star":
+        RULES_PREFIX_STAR.append(c_rule)
+    elif _rtype == "brace":
+        RULES_PREFIX_BRACE.append(c_rule)
+    elif _rtype == "jwt":
+        RULE_JWT = c_rule
+
+# Pre-cached algorithm details to avoid allocating new dictionaries per match
+CACHED_ALGORITHM_DETAILS: Dict[str, Dict[str, Any]] = {
+    name: {
+        "name": name,
+        "bit_length": meta.get("bit_length"),
+        "security": meta.get("security"),
+        "summary": meta.get("summary"),
+        "common_in": meta.get("common_in"),
+    }
+    for name, meta in ALGORITHM_METADATA.items()
+}
+
+CACHED_COMPACT_DETAILS: Dict[str, Dict[str, Any]] = {
+    name: {
+        "name": name,
+        "bit_length": meta.get("bit_length"),
+        "security": meta.get("security"),
+    }
+    for name, meta in ALGORITHM_METADATA.items()
+}
 
 def analyze_charset(value: str) -> Dict[str, Any]:
     """Analyze the character set, format categories, and entropy of a hash string."""
     length = len(value)
-    is_hex_lower = bool(re.match(r'^[0-9a-f]+$', value))
-    is_hex_upper = bool(re.match(r'^[0-9A-F]+$', value))
-    is_hex_mixed = bool(re.match(r'^[0-9a-fA-F]+$', value)) and not (is_hex_lower or is_hex_upper)
+    is_hex_lower = bool(RE_HEX_LOWER.match(value))
+    is_hex_upper = bool(RE_HEX_UPPER.match(value))
+    is_hex_mixed = bool(RE_HEX_ALL.match(value)) and not (is_hex_lower or is_hex_upper)
     is_hex = is_hex_lower or is_hex_upper or is_hex_mixed
 
-    is_base64 = bool(re.match(r'^[A-Za-z0-9+/]+={0,2}$', value)) and (length % 4 == 0)
-    is_base64url = bool(re.match(r'^[A-Za-z0-9_-]+$', value))
-    is_mcf = bool(value.startswith('$'))
+    is_base64 = (length % 4 == 0) and bool(RE_BASE64.match(value))
+    is_base64url = bool(RE_BASE64URL.match(value))
+    is_mcf = value.startswith('$')
 
     # Estimate underlying bit length for standard hex
     estimated_bits: Optional[int] = None
@@ -502,12 +610,17 @@ def analyze_charset(value: str) -> Dict[str, Any]:
     }
 
 
-def identify_hash(value: str) -> Dict[str, Any]:
-    """Identify possible hash algorithms for a given hash string.
+def identify_hash(value: str, compact: bool = False) -> Dict[str, Any]:
+    """Identify possible hash algorithms for a given hash string using fast rule dispatch.
 
     Maintains 100% backward compatibility with the original identify_hash output
     while enriching results with ranked match scores, ambiguity warnings,
     and detailed rationale.
+
+    Args:
+        value: Raw hash string to analyze.
+        compact: If True (e.g. for batch processing), omits verbose multi-paragraph
+                 metadata strings to minimize response memory.
     """
     cleaned = value.strip()
     if not cleaned:
@@ -524,34 +637,56 @@ def identify_hash(value: str) -> Dict[str, Any]:
         }
 
     charset = analyze_charset(cleaned)
+    length = charset["length"]
+    is_hex = charset["is_hex"]
+
+    # Fast dispatch: evaluate only relevant candidate rules instead of testing all rules
+    candidate_rules: List[CompiledRule]
+    if cleaned.startswith("$"):
+        candidate_rules = RULES_PREFIX_DOLLAR
+    elif cleaned.startswith("*"):
+        candidate_rules = RULES_PREFIX_STAR
+    elif cleaned.startswith("{"):
+        candidate_rules = RULES_PREFIX_BRACE
+    elif is_hex and length in RULES_HEX_BY_LEN:
+        candidate_rules = RULES_HEX_BY_LEN[length]
+    elif charset["is_base64"] and length in RULES_BASE64_BY_LEN:
+        candidate_rules = RULES_BASE64_BY_LEN[length]
+    elif "." in cleaned:
+        candidate_rules = [RULE_JWT] if RULE_JWT else []
+    else:
+        candidate_rules = COMPILED_RULES
+
     matches: List[Dict[str, Any]] = []
+    details_cache = CACHED_COMPACT_DETAILS if compact else CACHED_ALGORITHM_DETAILS
 
-    for pattern, types, note, confidence, score, rationale, ambiguity in DETECTION_RULES:
-        if re.match(pattern, cleaned):
-            # Assemble algorithm-specific rationale
-            detailed_types = []
-            for t in types:
-                meta = ALGORITHM_METADATA.get(t, {})
-                detailed_types.append({
-                    "name": t,
-                    "bit_length": meta.get("bit_length"),
-                    "security": meta.get("security"),
-                    "summary": meta.get("summary"),
-                    "common_in": meta.get("common_in"),
-                })
+    for rule in candidate_rules:
+        if rule.regex.match(cleaned):
+            detailed_types = [
+                details_cache.get(t, {"name": t})
+                for t in rule.types
+            ]
 
-            matches.append({
-                "types": types,  # backward compatible list of string algorithm names
-                "note": note,    # backward compatible string
-                "confidence": confidence,  # "high", "medium", "low"
-                "score": score,  # evidence-based match score 0-100
-                "rationale": rationale,
-                "ambiguity_note": ambiguity,
+            match_entry: Dict[str, Any] = {
+                "types": rule.types,
+                "note": rule.note,
+                "confidence": rule.confidence,
+                "score": rule.score,
                 "algorithm_details": detailed_types,
-            })
+            }
+            if not compact:
+                match_entry["rationale"] = rule.rationale
+                match_entry["ambiguity_note"] = rule.ambiguity
+
+            matches.append(match_entry)
+
+            # Early stopping for high-confidence structured formats where subsequent rules cannot match
+            if rule.score >= 95 and rule.rule_type in ("dollar", "star", "brace"):
+                break
 
     # Sort matches by score descending
-    matches.sort(key=lambda m: m["score"], reverse=True)
+    if len(matches) > 1:
+        matches.sort(key=lambda m: m["score"], reverse=True)
 
     # Top-level ambiguity assessment
     ambiguity_warning: Optional[str] = None
@@ -570,8 +705,8 @@ def identify_hash(value: str) -> Dict[str, Any]:
 
     result: Dict[str, Any] = {
         "input": cleaned,
-        "length": charset["length"],
-        "is_hex": charset["is_hex"],
+        "length": length,
+        "is_hex": is_hex,
         "valid": True,
         "matches": matches,
         "match_count": len(matches),

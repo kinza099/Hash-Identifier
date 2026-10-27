@@ -49,16 +49,25 @@ ALGORITHM_SECURITY_WARNINGS = {
 }
 
 
-def hash_text(text: str, encoding: str = "utf-8") -> Dict[str, Any]:
+MAX_TEXT_SIZE_BYTES = 16 * 1024 * 1024  # 16 MB
+
+
+def hash_text(text: str, encoding: str = "utf-8", max_bytes: int = MAX_TEXT_SIZE_BYTES) -> Dict[str, Any]:
     """Generate hashes for a given string across all supported algorithms simultaneously.
 
     Unicode is fully supported and encoded to UTF-8 by default.
     Empty input is explicitly supported and produces standard canonical empty string digests.
+    Enforces maximum payload size limits to prevent memory exhaustion.
     """
     if text is None:
         text = ""
 
+    if len(text) > max_bytes:
+        raise ValueError(f"Input text exceeds maximum allowed size ({max_bytes:,} bytes).")
+
     byte_data = text.encode(encoding)
+    if len(byte_data) > max_bytes:
+        raise ValueError(f"Encoded byte payload exceeds maximum allowed size ({max_bytes:,} bytes).")
     results: Dict[str, Dict[str, Any]] = {}
 
     for alg in SUPPORTED_ALGORITHMS:

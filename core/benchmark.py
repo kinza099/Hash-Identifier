@@ -30,6 +30,12 @@ SIZE_PRESETS = {
 }
 
 
+MIN_BENCHMARK_SIZE_BYTES = 1024              # 1 KB
+MAX_BENCHMARK_SIZE_BYTES = 16 * 1024 * 1024  # 16 MB
+MIN_BENCHMARK_ITERATIONS = 1
+MAX_BENCHMARK_ITERATIONS = 20
+
+
 def run_benchmark(
     size_bytes: int = 1024 * 1024,
     iterations: int = 5,
@@ -38,12 +44,21 @@ def run_benchmark(
     """Execute real-time cryptographic hash benchmark across supported algorithms.
 
     Generates a deterministic pseudo-random byte payload so every algorithm
-    hashes the exact same data bytes.
+    hashes the exact same data bytes. Clamps payload size and iteration count
+    to safe boundaries to prevent Denial of Service.
     """
-    if size_bytes <= 0:
+    try:
+        size_bytes = int(size_bytes)
+    except (ValueError, TypeError):
         size_bytes = 1024 * 1024
-    if iterations <= 0:
-        iterations = 1
+
+    try:
+        iterations = int(iterations)
+    except (ValueError, TypeError):
+        iterations = 5
+
+    size_bytes = max(MIN_BENCHMARK_SIZE_BYTES, min(size_bytes, MAX_BENCHMARK_SIZE_BYTES))
+    iterations = max(MIN_BENCHMARK_ITERATIONS, min(iterations, MAX_BENCHMARK_ITERATIONS))
 
     # Generate test payload: deterministic pseudo-random bytes
     # Repeating a 1024-byte pattern to avoid memory overhead of os.urandom for large sizes

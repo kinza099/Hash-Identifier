@@ -5,7 +5,7 @@ Processes multiline hash lists and CSV/TXT uploads:
 - Identifies and ranks algorithms per line
 - Summarizes total, valid, invalid, and duplicate entries
 - Detects repeated hash strings and groups occurrences
-- Supports CSV and JSON exports
+- Supports CSV and JSON exports with memory-efficient incremental parsing
 """
 
 import csv
@@ -16,75 +16,88 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from core.detector import identify_hash
 
+MAX_BATCH_ROWS = 10000
 
-def parse_hash_input(raw_text: str) -> List[Dict[str, Any]]:
+
+def parse_hash_input(raw_text: str, max_rows: int = MAX_BATCH_ROWS) -> List[Dict[str, Any]]:
     """Parse multiline text or raw input into structured lines with line numbers.
 
     Handles CRLF and LF line breaks. Blank or whitespace-only lines are tracked
     to preserve accurate line numbers without failing silently.
+    Enforces maximum line processing limits to protect memory.
     """
-    lines = raw_text.splitlines()
     entries: List[Dict[str, Any]] = []
 
-    for idx, line in enumerate(lines, start=1):
-        raw_val = line
+    for idx, line in enumerate(raw_text.splitlines(), start=1):
+        if idx > max_rows:
+            break
         stripped_val = line.strip()
-        is_empty = (len(stripped_val) == 0)
-
         entries.append({
             "line_number": idx,
-            "raw_value": raw_val,
             "value": stripped_val,
-            "is_empty": is_empty,
+            "is_empty": len(stripped_val) == 0,
         })
 
     return entries
 
 
-def parse_csv_input(csv_text: str, column_name: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Parse CSV text to extract hash values from a specified column or the first column.
+def parse_csv_input(
+    csv_text: str,
+    column_name: Optional[str] = None,
+    max_rows: int = MAX_BATCH_ROWS,
+) -> List[Dict[str, Any]]:
+    """Parse CSV text incrementally to extract hash values from a specified column or the first matching column.
 
-    Handles header detection, commas, tabs, semicolons.
+    Streams rows incrementally without materializing all rows into memory at once.
     """
     reader = csv.reader(io.StringIO(csv_text))
-    rows = list(reader)
-    if not rows:
+    try:
+        first_row = next(reader)
+    except StopIteration:
         return []
 
-    entries: List[Dict[str, Any]] = []
-    start_row = 1
     col_idx = 0
+    is_header = False
 
-    header = rows[0]
-    # Check if header contains a 'hash' column
+    # Check if first row contains a 'hash' column name
     if column_name:
-        for i, col in enumerate(header):
+        for i, col in enumerate(first_row):
             if col.strip().lower() == column_name.lower():
                 col_idx = i
-                start_row = 2
+                is_header = True
                 break
     else:
-        for i, col in enumerate(header):
+        for i, col in enumerate(first_row):
             if any(k in col.strip().lower() for k in ["hash", "digest", "checksum"]):
                 col_idx = i
-                start_row = 2
+                is_header = True
                 break
 
-    # If first row was not a recognized header, treat as data unless alphabetic
-    first_row_val = header[col_idx].strip() if col_idx < len(header) else ""
-    if start_row == 1 and any(c in first_row_val.lower() for c in ["hash", "digest", "algorithm"]):
-        start_row = 2
+    first_row_val = first_row[col_idx].strip() if col_idx < len(first_row) else ""
+    if not is_header and any(c in first_row_val.lower() for c in ["hash", "digest", "algorithm"]):
+        is_header = True
 
-    for r_idx, row in enumerate(rows, start=1):
-        if r_idx < start_row:
-            continue
-        val = row[col_idx].strip() if col_idx < len(row) else ""
-        raw_row = ",".join(row)
+    entries: List[Dict[str, Any]] = []
+    row_counter = 1
+
+    # If first row was actual data (not a recognized header), process it as row 1
+    if not is_header:
         entries.append({
-            "line_number": r_idx,
-            "raw_value": raw_row,
+            "line_number": 1,
+            "value": first_row_val,
+            "is_empty": len(first_row_val) == 0,
+        })
+
+    # Stream subsequent rows up to max_rows
+    for row in reader:
+        row_counter += 1
+        if len(entries) >= max_rows:
+            break
+        val = row[col_idx].strip() if col_idx < len(row) else ""
+        entries.append({
+            "line_number": row_counter,
             "value": val,
-            "is_empty": (len(val) == 0),
+            "is_empty": len(val) == 0,
         })
 
     return entries
@@ -94,16 +107,19 @@ def process_batch(
     raw_text: str,
     is_csv: bool = False,
     csv_column: Optional[str] = None,
+    compact: bool = False,
+    max_rows: int = MAX_BATCH_ROWS,
 ) -> Dict[str, Any]:
     """Scan and identify a batch of hashes.
 
     Returns detailed line-by-line identification results, duplicate tracking,
     summary metrics, and export structures.
+    Uses single-pass normalization and precompiled dispatching for high throughput.
     """
     if is_csv:
-        entries = parse_csv_input(raw_text, csv_column)
+        entries = parse_csv_input(raw_text, csv_column, max_rows=max_rows)
     else:
-        entries = parse_hash_input(raw_text)
+        entries = parse_hash_input(raw_text, max_rows=max_rows)
 
     results: List[Dict[str, Any]] = []
     seen_hashes: Dict[str, List[int]] = defaultdict(list)
@@ -135,17 +151,19 @@ def process_batch(
             })
             continue
 
-        # Case normalization for duplicate detection of hex hashes
-        norm_key = val.lower() if all(c in "0123456789abcdefABCDEF" for c in val) else val
-        seen_hashes[norm_key].append(line_num)
-
-        ident = identify_hash(val)
+        ident = identify_hash(val, compact=compact)
         is_valid = ident.get("valid", False) and len(ident.get("matches", [])) > 0
+        is_hex = ident.get("is_hex", False)
+
+        # Compute case-normalization key once per entry
+        norm_key = val.lower() if is_hex else val
+        seen_hashes[norm_key].append(line_num)
 
         if is_valid:
             valid_count += 1
             best_match = ident["matches"][0]
-            primary_alg = "/".join(best_match["types"][:2]) + ("..." if len(best_match["types"]) > 2 else "")
+            types = best_match["types"]
+            primary_alg = "/".join(types[:2]) + ("..." if len(types) > 2 else "")
             confidence = best_match["confidence"]
             score = best_match.get("score", 0)
             status = "VALID"
@@ -156,42 +174,43 @@ def process_batch(
             score = 0
             status = "INVALID"
 
-        results.append({
+        entry_res: Dict[str, Any] = {
             "line_number": line_num,
             "input": val,
+            "_norm_key": norm_key,
             "valid": is_valid,
             "status": status,
             "message": ident.get("message") if not is_valid else "Matched format",
             "length": ident.get("length", len(val)),
-            "is_hex": ident.get("is_hex", False),
-            "is_duplicate": False,  # Updated in next pass
+            "is_hex": is_hex,
+            "is_duplicate": False,
             "duplicate_occurrences": 1,
             "matches": ident.get("matches", []),
             "primary_algorithm": primary_alg,
             "confidence": confidence,
             "score": score,
             "ambiguity_warning": ident.get("ambiguity_warning"),
-        })
+        }
+        results.append(entry_res)
 
-    # Second pass: mark duplicates and counts
+    # Second pass: mark duplicates using precomputed _norm_key (zero string rescanning)
     duplicate_groups_count = 0
     total_duplicate_entries = 0
-
-    for item in results:
-        val = item["input"]
-        if not val:
-            continue
-        norm_key = val.lower() if all(c in "0123456789abcdefABCDEF" for c in val) else val
-        lines_for_key = seen_hashes[norm_key]
-        if len(lines_for_key) > 1:
-            item["is_duplicate"] = True
-            item["duplicate_occurrences"] = len(lines_for_key)
-            item["duplicate_lines"] = lines_for_key
 
     for lines in seen_hashes.values():
         if len(lines) > 1:
             duplicate_groups_count += 1
             total_duplicate_entries += (len(lines) - 1)
+
+    for item in results:
+        norm_key = item.pop("_norm_key", None)
+        if not norm_key:
+            continue
+        lines_for_key = seen_hashes[norm_key]
+        if len(lines_for_key) > 1:
+            item["is_duplicate"] = True
+            item["duplicate_occurrences"] = len(lines_for_key)
+            item["duplicate_lines"] = lines_for_key
 
     return {
         "total_entries": len(entries),
@@ -205,12 +224,16 @@ def process_batch(
     }
 
 
-def find_duplicates(raw_text: str, case_sensitive: bool = False) -> Dict[str, Any]:
+def find_duplicates(
+    raw_text: str,
+    case_sensitive: bool = False,
+    max_rows: int = MAX_BATCH_ROWS,
+) -> Dict[str, Any]:
     """Identify repeated hash values, group them together, and report occurrence lines.
 
     Preserves original casing in reports while grouping by chosen normalization.
     """
-    entries = parse_hash_input(raw_text)
+    entries = parse_hash_input(raw_text, max_rows=max_rows)
     groups: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
 
     total_valid_entries = 0
